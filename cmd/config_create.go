@@ -1,13 +1,14 @@
 /*
 Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // createCmd represents the create command
@@ -22,6 +23,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("create called")
+
+		setupConfig()
+
+		printConfig("ContentDir", "LayoutDir", "Taxonomies.tag")
 	},
 }
 
@@ -37,4 +42,61 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func setupConfig() {
+	addConfigPaths()
+	setConfigNameAndType()
+	setDefaultValues()
+
+	if err := viper.ReadInConfig(); err != nil {
+		handleConfigReadError(err)
+	}
+}
+
+func addConfigPaths() {
+	viper.AddConfigPath("$HOME")
+	viper.AddConfigPath(".")
+}
+
+func setConfigNameAndType() {
+	viper.SetConfigName(".deliverhalf")
+	viper.SetConfigType("yaml")
+}
+
+func setDefaultValues() {
+	viper.SetDefault("ContentDir", "content")
+	viper.SetDefault("LayoutDir", "layouts")
+	viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
+}
+
+func handleConfigReadError(err error) {
+	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+		createConfigFile()
+	} else {
+		fmt.Println("Error reading config file:", err)
+		os.Exit(1)
+	}
+}
+
+func createConfigFile() {
+	fmt.Println("Config file not found, creating it with default values...")
+
+	if err := viper.SafeWriteConfig(); err != nil {
+		if os.IsNotExist(err) {
+			if err := viper.WriteConfig(); err != nil {
+				fmt.Println("Error writing config file:", err)
+				os.Exit(1)
+			}
+		}
+	}
+
+	fmt.Println("Config file created with default values.")
+}
+
+func printConfig(keys ...string) {
+	for _, key := range keys {
+		value := viper.Get(key)
+		fmt.Printf("%s: %v\n", key, value)
+	}
 }
