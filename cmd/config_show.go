@@ -23,7 +23,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("show called")
 		setupConfig()
-		printConfig("ContentDir", "LayoutDir", "Taxonomies.tag")
+		printConfig("ContentDir", "LayoutDir", "Taxonomies.tag", "sns.topic-arn")
 	},
 }
 

@@ -26,7 +26,6 @@ to quickly create a Cobra application.`,
 
 		setupConfig()
 
-		printConfig("ContentDir", "LayoutDir", "Taxonomies.tag")
 	},
 }
 
@@ -65,9 +64,7 @@ func setConfigNameAndType() {
 }
 
 func setDefaultValues() {
-	viper.SetDefault("ContentDir", "content")
-	viper.SetDefault("LayoutDir", "layouts")
-	viper.SetDefault("Taxonomies", map[string]string{"tag": "tags", "category": "categories"})
+	viper.SetDefault("SNS", map[string]string{"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic", "region": "us-west-2"})
 }
 
 func handleConfigReadError(err error) {
@@ -93,4 +90,3 @@ func createConfigFile() {
 
 	fmt.Println("Config file created with default values.")
 }
-
