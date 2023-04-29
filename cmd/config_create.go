@@ -94,9 +94,3 @@ func createConfigFile() {
 	fmt.Println("Config file created with default values.")
 }
 
-func printConfig(keys ...string) {
-	for _, key := range keys {
-		value := viper.Get(key)
-		fmt.Printf("%s: %v\n", key, value)
-	}
-}
