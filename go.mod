@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.20.9
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (

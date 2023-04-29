@@ -7,12 +7,11 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-// showCmd represents the show command
-var showCmd = &cobra.Command{
-	Use:   "show",
+// metaCmd represents the meta command
+var metaCmd = &cobra.Command{
+	Use:   "meta",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -21,28 +20,20 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		setupConfig()
-		printConfig("sns.topic-arn", "sns.region")
+		fmt.Println("meta called")
 	},
 }
 
 func init() {
-	configCmd.AddCommand(showCmd)
+	rootCmd.AddCommand(metaCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// showCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// metaCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// showCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func printConfig(keys ...string) {
-	for _, key := range keys {
-		value := viper.Get(key)
-		fmt.Printf("%s: %v\n", key, value)
-	}
+	// metaCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
