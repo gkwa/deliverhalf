@@ -4,7 +4,6 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -30,7 +28,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fetch()
+		logger := setupLogger()
+		data := fetch(logger)
+		logger.Println(getMapAsString(logger, data))
 	},
 }
 
@@ -48,16 +48,6 @@ func init() {
 	// fetchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func writeBase64Data(logger *log.Logger, dataPath string, data []byte) error {
-	base64Str := base64.StdEncoding.EncodeToString(data)
-	if err := ioutil.WriteFile(dataPath, []byte(base64Str), 0o644); err != nil {
-		return fmt.Errorf("Error writing base64-encoded JSON to file: %s", err)
-	}
-
-	logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
-	return nil
-}
-
 func setupLogger() *log.Logger {
 	logFile := &lumberjack.Logger{
 		Filename:   "fetchmeta.log",
@@ -68,30 +58,6 @@ func setupLogger() *log.Logger {
 	defer logFile.Close()
 	logWriter := io.MultiWriter(logFile, os.Stderr)
 	return log.New(logWriter, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC|log.Lshortfile)
-}
-
-func fileExists(logger *log.Logger, filePath string) bool {
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		return false
-	} else {
-		return true
-	}
-}
-
-func deleteFile(logger *log.Logger, filePath string) error {
-	if !fileExists(logger, filePath) {
-		logger.Printf("%s doesn't exist, nothing to delete", filePath)
-		return nil
-	}
-
-	logger.Printf("deleting %s", filePath)
-	err := os.Remove(filePath)
-	if err != nil {
-		logger.Printf("%s couldn't be deleted", filePath)
-		return err
-	}
-	return nil
 }
 
 func parseData(data []byte) (map[string]interface{}, error) {
@@ -113,18 +79,38 @@ func addEpochTimestamp(data map[string]interface{}) map[string]interface{} {
 	return data
 }
 
-func writeData(logger *log.Logger, dataPath string, data interface{}) error {
-	jsonStr, err := json.MarshalIndent(data, "", "    ")
+func mergeData(logger *log.Logger, data []byte) map[string]interface{} {
+	parsedData, err := parseData(data)
 	if err != nil {
-		return fmt.Errorf("Error pretty-printing JSON: %s", err)
+		logger.Fatalf("Error parsing JSON data:%s", err)
+		panic(err)
 	}
 
-	if err := ioutil.WriteFile(dataPath, jsonStr, 0o644); err != nil {
-		return fmt.Errorf("Error writing JSON to file: %s", err)
-	}
+	// add epochtime timestamp blob
+	newData := addEpochTimestamp(parsedData)
+	return newData
+}
 
-	logger.Printf("Successfully wrote JSON data to file %s", dataPath)
-	return nil
+func toJsonStr(logger *log.Logger, data map[string]interface{}) string {
+	// Convert the map to a flat JSON string
+	jsonStr, err := json.Marshal(data)
+	if err != nil {
+		logger.Println("Error parsing JSON data:", err)
+		panic(err)
+	}
+	logger.Printf("json: %s", jsonStr)
+	return string(jsonStr)
+}
+
+func toJsonPrettyStr(logger *log.Logger, data map[string]interface{}) string {
+	// Convert the map to a pretty JSON string
+	jsonStrPretty, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		logger.Println("Error marshaling data:", err)
+		panic(err)
+	}
+	logger.Printf("json: %s", jsonStrPretty)
+	return string(jsonStrPretty)
 }
 
 func fetchData() ([]byte, error) {
@@ -152,49 +138,12 @@ func fetchData() ([]byte, error) {
 	return body, nil
 }
 
-func fetch() {
-	logger := setupLogger()
-
-	logger.Println("fetch called")
-
-	wd, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting working directory:", err)
-		return
-	}
-
-	dataPath := filepath.Join(wd, "meta.json")
-	dataPath2 := filepath.Join(wd, "meta-b64.txt")
-
-	deleteFile(logger, dataPath)
-	deleteFile(logger, dataPath2)
-
+func fetch(logger *log.Logger) map[string]interface{} {
 	body, err := fetchData()
 	if err != nil {
 		logger.Fatalf("Error fetching data: %s", err)
 	}
 
-	parsedData, err := parseData(body)
-	if err != nil {
-		logger.Fatalf("Error parsing JSON data:%s", err)
-		panic(err)
-	}
-
-	// add epochtime timestamp blob
-	newData := addEpochTimestamp(parsedData)
-
-	// Convert the map to a flat JSON string
-	jsonStr, err := json.Marshal(newData)
-	if err != nil {
-		logger.Println("Error parsing JSON data:", err)
-		panic(err)
-	}
-	logger.Printf("json: %s", jsonStr)
-
-	// Convert the map to a pretty JSON string
-	jsonStrPretty, _ := json.MarshalIndent(newData, "", "    ")
-	logger.Printf("json: %s", jsonStrPretty)
-
-	writeData(logger, dataPath, newData)
-	writeBase64Data(logger, dataPath2, jsonStrPretty)
+	mergedData := mergeData(logger, body)
+	return mergedData
 }
