@@ -1,0 +1,8 @@
+dist/artifacts.json
+dist/deliverhalf_windows_amd64_v1/deliverhalf.exe
+dist/config.yaml
+dist/metadata.json
+dist/deliverhalf_linux_amd64_v1/deliverhalf
+dist/deliverhalf_darwin_amd64_v1/deliverhalf
+.goreleaser.yaml
+deliverhalf
