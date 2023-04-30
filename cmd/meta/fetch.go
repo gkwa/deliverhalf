@@ -30,7 +30,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := setupLogger()
 		data := fetch(logger)
-		logger.Println(getMapAsString(logger, data))
+		fmt.Println(getMapAsString(logger, data))
 	},
 }
 
