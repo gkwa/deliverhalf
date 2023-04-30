@@ -42,13 +42,13 @@ func init() {
 }
 
 func getTestBlobBase64() string {
-	result := genTestBlob()
+	result := GenTestBlob()
 	msg := []byte(result)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 	return base64Str
 }
 
-func genTestBlob() string {
+func GenTestBlob() string {
 	jsonStr := `{
         "accountId": "348759328109",
         "architecture": "arm64",

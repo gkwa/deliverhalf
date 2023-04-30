@@ -7,18 +7,18 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
+	cmd "github.com/taylormonacelli/deliverhalf/cmd/meta"
 
 	"github.com/spf13/viper"
 )
 
 // testCmd represents the test command
 var testCmd = &cobra.Command{
-	Use:   "test",
+	Use:   "test1",
 	Short: "test message is fake data and varies only in epochtime",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -49,34 +49,9 @@ func test1() {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
-	jsonStr := `{
-        "accountId": "348759328109",
-        "architecture": "arm64",
-        "availabilityZone": "us-east-1c",
-        "billingProducts": [
-            "bp-8f5a09f1"
-        ],
-        "devpayProductCodes": null,
-        "epochtime": %d,
-        "imageId": "ami-0f4836e0909f7315f",
-        "instanceId": "i-0388847dffe58da42",
-        "instanceType": "m5a.4xlarge",
-        "kernelId": null,
-        "marketplaceProductCodes": null,
-        "pendingTime": "2023-04-29T15:45:23Z",
-        "privateIp": "10.1.2.15",
-        "ramdiskId": null,
-        "region": "us-east-1",
-        "version": "2022-11-07"
-    }`
+	jsonStr := cmd.GenTestBlob()
 
-	// Get the current Unix Epoch time
-	epoch := time.Now().Unix()
-
-	// Format the JSON string with the epoch time
-	formattedJson := fmt.Sprintf(jsonStr, epoch)
-
-	msg := []byte(formattedJson)
+	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
 	fmt.Printf("region: %s", topicRegion)
