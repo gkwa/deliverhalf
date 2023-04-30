@@ -25,7 +25,6 @@ to quickly create a Cobra application.`,
 		fmt.Println("create called")
 
 		setupConfig()
-
 	},
 }
 

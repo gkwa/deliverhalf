@@ -4,21 +4,19 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"context"
+	"encoding/base64"
+	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
-
-	"encoding/base64"
 )
 
 // testCmd represents the test command
-var test2Cmd = &cobra.Command{
+var test3Cmd = &cobra.Command{
 	Use:   "test2",
 	Short: "test message is fake data and is static",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -28,12 +26,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		test2()
+		test3()
 	},
 }
 
 func init() {
-	snsCmd.AddCommand(test2Cmd)
+	snsCmd.AddCommand(test3Cmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -46,7 +44,7 @@ func init() {
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test2() {
+func test3() {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 

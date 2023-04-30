@@ -4,23 +4,22 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"context"
+	"encoding/base64"
+	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
-
-	"encoding/base64"
 )
 
 // testCmd represents the test command
-var test3Cmd = &cobra.Command{
-	Use:   "test2",
-	Short: "test message is fake data and is static",
+var testCmd = &cobra.Command{
+	Use:   "test",
+	Short: "test message is fake data and varies only in epochtime",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -28,12 +27,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		test3()
+		test1()
 	},
 }
 
 func init() {
-	snsCmd.AddCommand(test3Cmd)
+	snsCmd.AddCommand(testCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -46,7 +45,7 @@ func init() {
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test3() {
+func test1() {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
@@ -58,7 +57,7 @@ func test3() {
             "bp-8f5a09f1"
         ],
         "devpayProductCodes": null,
-        "epochtime": 1682801174,
+        "epochtime": %d,
         "imageId": "ami-0f4836e0909f7315f",
         "instanceId": "i-0388847dffe58da42",
         "instanceType": "m5a.4xlarge",
@@ -71,7 +70,13 @@ func test3() {
         "version": "2022-11-07"
     }`
 
-	msg := []byte(jsonStr)
+	// Get the current Unix Epoch time
+	epoch := time.Now().Unix()
+
+	// Format the JSON string with the epoch time
+	formattedJson := fmt.Sprintf(jsonStr, epoch)
+
+	msg := []byte(formattedJson)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
 	fmt.Printf("region: %s", topicRegion)

@@ -30,7 +30,6 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("fetch called")
 		fetch()
 	},
 }
@@ -120,7 +119,7 @@ func writeData(logger *log.Logger, dataPath string, data interface{}) error {
 		return fmt.Errorf("Error pretty-printing JSON: %s", err)
 	}
 
-	if err := ioutil.WriteFile(dataPath, jsonStr, 0644); err != nil {
+	if err := ioutil.WriteFile(dataPath, jsonStr, 0o644); err != nil {
 		return fmt.Errorf("Error writing JSON to file: %s", err)
 	}
 
@@ -156,7 +155,7 @@ func fetchData() ([]byte, error) {
 func fetch() {
 	logger := setupLogger()
 
-	logger.Println("Starting application...")
+	logger.Println("fetch called")
 
 	wd, err := os.Getwd()
 	if err != nil {
