@@ -15,6 +15,7 @@ import (
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
+	Args:  cobra.OnlyValidArgs,
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -29,6 +30,11 @@ to quickly create a Cobra application.`,
 			cmd.Help()
 			os.Exit(0)
 		}
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Help()
+		os.Exit(1)
+		return nil
 	},
 }
 
