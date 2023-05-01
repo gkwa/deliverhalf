@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
-	cmd "github.com/taylormonacelli/deliverhalf/cmd/meta"
+	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 
 	"github.com/spf13/viper"
 )
@@ -49,7 +49,7 @@ func test1() {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
-	jsonStr := cmd.GenTestBlob()
+	jsonStr := meta.GenTestBlob()
 
 	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)

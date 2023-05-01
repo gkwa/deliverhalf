@@ -1,16 +1,22 @@
+SOURCES := $(shell find . -name '*.go')
+TARGET := ./dist/deliverhalf_darwin_amd64_v1/deliverhalf
+
 run: deliverhalf
 	./deliverhalf
 
-deliverhalf: ./dist/deliverhalf_darwin_amd64_v1/deliverhalf
+deliverhalf: $(TARGET)
 	cp $< $@
 
-./dist/deliverhalf_darwin_amd64_v1/deliverhalf: main.go cmd/*/*.go
-	gofumpt -w $<
-	goreleaser build --single-target --snapshot --clean
 
 all:
 	goreleaser build --snapshot --clean
 
+$(TARGET): $(SOURCES)
+	gofumpt -w $<
+	goreleaser build --single-target --snapshot --clean
+
+.PHONY: clean
 clean:
 	rm -f deliverhalf
+	rm -f $(TARGET)
 	rm -rf dist

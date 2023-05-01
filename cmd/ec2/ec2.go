@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/taylormonacelli/deliverhalf/cmd"
-
 	"github.com/spf13/cobra"
+	"github.com/taylormonacelli/deliverhalf/cmd"
 )
 
-// snsCmd represents the sns command
-var snsCmd = &cobra.Command{
-	Use:   "sns",
+// ec2Cmd represents the ec2 command
+var Ec2Cmd = &cobra.Command{
+	Use:   "ec2",
 	Args:  cobra.OnlyValidArgs,
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -24,8 +23,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("sns called")
-
+		fmt.Println("ec2 called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)
@@ -39,15 +37,15 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	cmd.RootCmd.AddCommand(snsCmd)
+	cmd.RootCmd.AddCommand(Ec2Cmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// snsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// ec2Cmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// snsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// ec2Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

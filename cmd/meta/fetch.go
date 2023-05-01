@@ -6,15 +6,14 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/natefinch/lumberjack.v2"
+
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 )
 
 // fetchCmd represents the fetch command
@@ -28,7 +27,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := setupLogger()
+		logger := common.SetupLogger()
 		data := fetch(logger)
 		fmt.Println(getMapAsString(logger, data))
 	},
@@ -46,18 +45,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// fetchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func setupLogger() *log.Logger {
-	logFile := &lumberjack.Logger{
-		Filename:   "fetchmeta.log",
-		MaxSize:    1, // In megabytes
-		MaxBackups: 0,
-		MaxAge:     365, // In days
-	}
-	defer logFile.Close()
-	logWriter := io.MultiWriter(logFile, os.Stderr)
-	return log.New(logWriter, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC|log.Lshortfile)
 }
 
 func parseData(data []byte) (map[string]interface{}, error) {

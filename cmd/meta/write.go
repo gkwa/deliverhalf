@@ -12,6 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +28,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := setupLogger()
+		logger := common.SetupLogger()
 
 		data := fetch(logger)
 		writeDataWrapper(logger, data)
@@ -113,17 +115,8 @@ func getWorkingDirectory() (string, error) {
 	return wd, nil
 }
 
-func fileExists(logger *log.Logger, filePath string) bool {
-	_, err := os.Stat(filePath)
-	if os.IsNotExist(err) {
-		return false
-	} else {
-		return true
-	}
-}
-
 func deleteFile(logger *log.Logger, filePath string) error {
-	if !fileExists(logger, filePath) {
+	if !common.FileExists(logger, filePath) {
 		logger.Printf("%s doesn't exist, nothing to delete", filePath)
 		return nil
 	}
