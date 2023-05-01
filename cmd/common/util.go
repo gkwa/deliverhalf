@@ -8,6 +8,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+
 func SetupLogger() *log.Logger {
 	logFile := &lumberjack.Logger{
 		Filename:   "fetchmeta.log",
