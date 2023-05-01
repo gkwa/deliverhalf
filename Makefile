@@ -7,7 +7,6 @@ run: deliverhalf
 deliverhalf: $(TARGET)
 	cp $< $@
 
-
 all:
 	goreleaser build --snapshot --clean
 

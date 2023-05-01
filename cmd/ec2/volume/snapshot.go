@@ -31,7 +31,6 @@ to quickly create a Cobra application.`,
 		fmt.Println("snapshot called")
 		logger := common.SetupLogger()
 		createSnapshot(logger)
-
 	},
 }
 
@@ -51,7 +50,15 @@ func init() {
 	// Load the AWS SDK configuration
 
 	// Load the AWS SDK configuration
+}
 
+func createConfig(logger *log.Logger, region string) aws.Config {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	if err != nil {
+		logger.Fatal(err)
+		os.Exit(1)
+	}
+	return cfg
 }
 
 func createSnapshot(logger *log.Logger) {
@@ -59,11 +66,10 @@ func createSnapshot(logger *log.Logger) {
 	snapshotDesc := "created by deliverhalf"
 	region := "us-west-2"
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
-	if err != nil {
-		logger.Fatal(err)
-		os.Exit(1)
-	}
+	logger.Printf("Creating snaptshot with description '%s' for volumeID %s in region %s",
+		snapshotDesc, volumeID, region)
+
+	cfg := createConfig(logger, region)
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	input := &ec2.CreateSnapshotInput{
@@ -73,7 +79,8 @@ func createSnapshot(logger *log.Logger) {
 
 	resp, err := ec2svc.CreateSnapshot(context.Background(), input)
 	if err != nil {
-		panic("failed to create EBS snapshot")
+		logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
+			*input.VolumeId, err)
 	}
 
 	snapshotID := *resp.SnapshotId
@@ -93,16 +100,12 @@ func tagSnapshot(logger *log.Logger, snapshotID string, region string) {
 		},
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
-	if err != nil {
-		logger.Fatal(err)
-		os.Exit(1)
-	}
+	cfg := createConfig(logger, region)
 	ec2svc := ec2.NewFromConfig(cfg)
 
-	_, err = ec2svc.CreateTags(context.Background(), tagInput)
+	_, err := ec2svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
-		logger.Printf("failed to tag snapshot with ID %s: %v", snapshotID, err)
+		logger.Fatalf("failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
 		logger.Printf("successfully tagged snapshot with ID %s", snapshotID)
 	}

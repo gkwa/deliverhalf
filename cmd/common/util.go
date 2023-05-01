@@ -8,13 +8,13 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-
 func SetupLogger() *log.Logger {
 	logFile := &lumberjack.Logger{
-		Filename:   "fetchmeta.log",
-		MaxSize:    1, // In megabytes
+		Filename:   "deliverhalf.log",
+		MaxSize:    10, // In megabytes
 		MaxBackups: 0,
 		MaxAge:     365, // In days
+		Compress:   true,
 	}
 	defer logFile.Close()
 	logWriter := io.MultiWriter(logFile, os.Stderr)
