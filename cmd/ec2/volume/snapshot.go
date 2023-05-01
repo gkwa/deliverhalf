@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 )
@@ -31,13 +31,13 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("snapshot called")
 		logger := common.SetupLogger()
-		// test(logger)
 		createVolumeSnapshot(logger)
+		queryRegionForSnapshotsWithTag(logger, "us-west-2")
 	},
 }
 
 func init() {
-	volumeCmd.AddCommand(snapshotCmd)
+	VolumeCmd.AddCommand(snapshotCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -77,6 +77,10 @@ func genSnapTags() []types.Tag {
 		{
 			Key:   aws.String("Other TagName"),
 			Value: aws.String("Other Tag Value"),
+		},
+		{
+			Key:   aws.String("CreatedBy"),
+			Value: aws.String("deliverhalf"),
 		},
 	}
 	return tags
@@ -134,6 +138,30 @@ func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc
 
 	snapshotID := *resp.SnapshotId
 	return snapshotID, err
+}
+
+func queryRegionForSnapshotsWithTag(logger *log.Logger, region string) {
+	cfg := createConfig(logger, region)
+	ec2svc := ec2.NewFromConfig(cfg)
+
+	// Get all snapshots with tag key "CreatedBy" and value "deliverhalf"
+	input1 := &ec2.DescribeSnapshotsInput{
+		Filters: []types.Filter{
+			{
+				Name:   aws.String("tag:CreatedBy"),
+				Values: []string{"deliverhalf"},
+			},
+		},
+	}
+	output, err := ec2svc.DescribeSnapshots(context.Background(), input1)
+	if err != nil {
+		fmt.Println("Error listing snapshots:", err)
+	}
+
+	// Print out the snapshot IDs
+	for _, snapshot := range output.Snapshots {
+		fmt.Println(*snapshot.SnapshotId)
+	}
 }
 
 func tagSnapshot(logger *log.Logger, snapshotID string, region string, tags []types.Tag) error {

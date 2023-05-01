@@ -19,7 +19,7 @@ import (
 )
 
 // volumeCmd represents the volume command
-var volumeCmd = &cobra.Command{
+var VolumeCmd = &cobra.Command{
 	Use:   "volume",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -43,7 +43,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	myec2.Ec2Cmd.AddCommand(volumeCmd)
+	myec2.Ec2Cmd.AddCommand(VolumeCmd)
 
 	// Here you will define your flags and configuration settings.
 
