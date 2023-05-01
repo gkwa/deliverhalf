@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 )
 

@@ -7,15 +7,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 )
 
 // snapshotCmd represents the snapshot command
@@ -52,15 +51,6 @@ func init() {
 	// Load the AWS SDK configuration
 
 	// Load the AWS SDK configuration
-}
-
-func createConfig(logger *log.Logger, region string) aws.Config {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
-	if err != nil {
-		logger.Fatal(err)
-		os.Exit(1)
-	}
-	return cfg
 }
 
 func genSnapDesc() string {
@@ -119,7 +109,11 @@ func snapAndTagVolume(logger *log.Logger, volumeID string, region string) (strin
 }
 
 func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc string) (string, error) {
-	cfg := createConfig(logger, region)
+	cfg, err := myec2.CreateConfig(logger, region)
+	if err != nil {
+		logger.Fatalf("Could not create config %s", err)
+	}
+
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	input := &ec2.CreateSnapshotInput{
@@ -141,7 +135,7 @@ func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc
 }
 
 func queryRegionForSnapshotsWithTag(logger *log.Logger, region string) {
-	cfg := createConfig(logger, region)
+	cfg, err := myec2.CreateConfig(logger, region)
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	// Get all snapshots with tag key "CreatedBy" and value "deliverhalf"
@@ -172,10 +166,13 @@ func tagSnapshot(logger *log.Logger, snapshotID string, region string, tags []ty
 		Tags:      tags,
 	}
 
-	cfg := createConfig(logger, region)
+	cfg, err := myec2.CreateConfig(logger, region)
+	if err != nil {
+		logger.Fatalf("Could not create config %s", err)
+	}
 	ec2svc := ec2.NewFromConfig(cfg)
 
-	_, err := ec2svc.CreateTags(context.Background(), tagInput)
+	_, err = ec2svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
 		logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
