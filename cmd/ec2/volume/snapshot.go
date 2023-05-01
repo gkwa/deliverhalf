@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -20,7 +21,7 @@ import (
 // snapshotCmd represents the snapshot command
 var snapshotCmd = &cobra.Command{
 	Use:   "snapshot",
-	Short: "A brief description of your command",
+	Short: "Create ec2 volume snapshot and tag it",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -30,7 +31,8 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("snapshot called")
 		logger := common.SetupLogger()
-		createSnapshot(logger)
+		// test(logger)
+		createVolumeSnapshot(logger)
 	},
 }
 
@@ -61,14 +63,58 @@ func createConfig(logger *log.Logger, region string) aws.Config {
 	return cfg
 }
 
-func createSnapshot(logger *log.Logger) {
-	volumeID := "vol-08f2578d51865489b"
+func genSnapDesc() string {
 	snapshotDesc := "created by deliverhalf"
+	return snapshotDesc
+}
+
+func genSnapTags() []types.Tag {
+	tags := []types.Tag{
+		{
+			Key:   aws.String("Name"),
+			Value: aws.String("mytest"),
+		},
+		{
+			Key:   aws.String("Other TagName"),
+			Value: aws.String("Other Tag Value"),
+		},
+	}
+	return tags
+}
+
+func createVolumeSnapshot(logger *log.Logger) (string, error) {
+	volumeID := "vol-08f2578d51865489b"
 	region := "us-west-2"
 
-	logger.Printf("Creating snaptshot with description '%s' for volumeID %s in region %s",
-		snapshotDesc, volumeID, region)
+	snapshotID, err := snapAndTagVolume(logger, volumeID, region)
+	if err != nil {
+		return "", err
+	}
 
+	return snapshotID, err
+}
+
+func snapAndTagVolume(logger *log.Logger, volumeID string, region string) (string, error) {
+	tags := genSnapTags()
+	description := genSnapDesc()
+
+	tagsStr := joinTagsToStr(logger, tags)
+	logger.Printf("Creating snapshot with description '%s' for "+
+		"volumeID: %s in region: %s and tagging with: '%s'",
+		description, volumeID, region, tagsStr)
+
+	snapshotID, err := snapVolume(logger, volumeID, region, description)
+	if err != nil {
+		logger.Printf("Error snapshotting volume: %s", err)
+		return "", err
+	}
+
+	logger.Printf("Snapshot created with ID: %s\n", snapshotID)
+	err = tagSnapshot(logger, snapshotID, region, tags)
+	return "", err
+}
+
+func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc string) (string, error) {
 	cfg := createConfig(logger, region)
 	ec2svc := ec2.NewFromConfig(cfg)
 
@@ -77,27 +123,25 @@ func createSnapshot(logger *log.Logger) {
 		Description: aws.String(snapshotDesc),
 	}
 
-	resp, err := ec2svc.CreateSnapshot(context.Background(), input)
+	// Create a snapshot
+	resp, err := ec2svc.CreateSnapshot(context.Background(), &ec2.CreateSnapshotInput{
+		VolumeId: aws.String(volumeID),
+	})
 	if err != nil {
 		logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
 			*input.VolumeId, err)
 	}
 
 	snapshotID := *resp.SnapshotId
-	fmt.Printf("Snapshot created with ID: %s\n", snapshotID)
-	tagSnapshot(logger, snapshotID, region)
+	return snapshotID, err
 }
 
-func tagSnapshot(logger *log.Logger, snapshotID string, region string) {
+func tagSnapshot(logger *log.Logger, snapshotID string, region string, tags []types.Tag) error {
 	// Add a tag to the snapshot
+
 	tagInput := &ec2.CreateTagsInput{
 		Resources: []string{snapshotID},
-		Tags: []types.Tag{
-			{
-				Key:   aws.String("Name"),
-				Value: aws.String("mytest"),
-			},
-		},
+		Tags:      tags,
 	}
 
 	cfg := createConfig(logger, region)
@@ -105,8 +149,21 @@ func tagSnapshot(logger *log.Logger, snapshotID string, region string) {
 
 	_, err := ec2svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
-		logger.Fatalf("failed to tag snapshot with ID %s: %v", snapshotID, err)
+		logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
-		logger.Printf("successfully tagged snapshot with ID %s", snapshotID)
+		tagsStr := joinTagsToStr(logger, tags)
+		logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
 	}
+	return err
+}
+
+func joinTagsToStr(logger *log.Logger, tags []types.Tag) string {
+	var sb strings.Builder
+	for _, s := range tags {
+		sb.WriteString(*s.Key + "=" + *s.Value + ";")
+	}
+
+	result := sb.String()
+
+	return result
 }
