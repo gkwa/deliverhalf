@@ -61,7 +61,15 @@ func setConfigNameAndType() {
 }
 
 func setDefaultValues() {
-	viper.SetDefault("SNS", map[string]string{"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic", "region": "us-west-2"})
+	viper.SetDefault("SNS", map[string]string{
+		"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic",
+		"region":    "us-west-2",
+	})
+	viper.SetDefault("SQS", map[string]string{
+		"region":    "us-west-2",
+		"queue-arn": "arn:aws:sqs:us-west-2:193048895737",
+		"queue-url": "https://sqs.us-west-2.amazonaws.com/193048895737/somename",
+	})
 }
 
 func handleConfigReadError(err error) {
