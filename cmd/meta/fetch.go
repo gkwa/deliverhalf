@@ -70,7 +70,6 @@ func mergeData(logger *log.Logger, data []byte) map[string]interface{} {
 	parsedData, err := parseData(data)
 	if err != nil {
 		logger.Fatalf("Error parsing JSON data:%s", err)
-		panic(err)
 	}
 
 	// add epochtime timestamp blob
@@ -83,7 +82,6 @@ func toJsonStr(logger *log.Logger, data map[string]interface{}) string {
 	jsonStr, err := json.Marshal(data)
 	if err != nil {
 		logger.Println("Error parsing JSON data:", err)
-		panic(err)
 	}
 	logger.Printf("json: %s", jsonStr)
 	return string(jsonStr)
@@ -94,7 +92,6 @@ func toJsonPrettyStr(logger *log.Logger, data map[string]interface{}) string {
 	jsonStrPretty, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		logger.Println("Error marshaling data:", err)
-		panic(err)
 	}
 	logger.Printf("json: %s", jsonStrPretty)
 	return string(jsonStrPretty)

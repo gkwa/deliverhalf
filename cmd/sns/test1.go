@@ -7,10 +7,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 
 	"github.com/spf13/viper"
@@ -27,7 +29,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		test1()
+		logger := common.SetupLogger()
+		test1(logger)
 	},
 }
 
@@ -45,7 +48,7 @@ func init() {
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test1() {
+func test1(logger *log.Logger) {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
@@ -58,7 +61,7 @@ func test1() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		panic("configuration error, " + err.Error())
+		logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)

@@ -5,11 +5,13 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/taylormonacelli/deliverhalf/cmd"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/taylormonacelli/deliverhalf/cmd"
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 )
 
 // configCmd represents the config command
@@ -24,7 +26,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("config called")
+		logger := common.SetupLogger()
+		logger.Println("config called")
 
 		if len(args) == 0 {
 			cmd.Help()
@@ -50,4 +53,48 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func reloadConfig(logger *log.Logger) {
+	// Read the default configuration file
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Printf("Error reading config file: %s", err)
+		return
+	}
+
+	// Reload the default configuration file
+	err = viper.ReadInConfig()
+	if err != nil {
+		fmt.Printf("Error reading config file: %s", err)
+		return
+	}
+}
+
+func s3ConfigAbsPath(logger *log.Logger) string {
+	bucket := viper.GetString("s3bucket.name")
+	s3ConfigPath := viper.GetString("s3bucket.path")
+
+	// Print the object's full path
+	path := fmt.Sprintf("s3://%s/%s", bucket, s3ConfigPath)
+	return path
+}
+
+func showSettings() {
+	// Get all configuration settings as a map
+	settings := viper.AllSettings()
+	printMap(settings, "")
+}
+
+func printMap(m map[string]interface{}, prefix string) {
+	for key, value := range m {
+		fmt.Printf("%s%s: ", prefix, key)
+		switch value.(type) {
+		case map[string]interface{}:
+			fmt.Println()
+			printMap(value.(map[string]interface{}), prefix+"  ")
+		default:
+			fmt.Printf("%v\n", value)
+		}
+	}
 }

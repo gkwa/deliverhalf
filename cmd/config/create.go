@@ -5,10 +5,13 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 )
 
 // createCmd represents the create command
@@ -22,7 +25,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		setupConfig()
+		logger := common.SetupLogger()
+		setupConfig(logger)
 	},
 }
 
@@ -40,13 +44,13 @@ func init() {
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func setupConfig() {
+func setupConfig(logger *log.Logger) {
 	addConfigPaths()
 	setConfigNameAndType()
-	setDefaultValues()
+	SetDefaultValues()
 
 	if err := viper.ReadInConfig(); err != nil {
-		handleConfigReadError(err)
+		handleConfigReadError(logger, err)
 	}
 }
 
@@ -60,7 +64,7 @@ func setConfigNameAndType() {
 	viper.SetConfigType("yaml")
 }
 
-func setDefaultValues() {
+func SetDefaultValues() {
 	viper.SetDefault("SNS", map[string]string{
 		"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic",
 		"region":    "us-west-2",
@@ -70,19 +74,25 @@ func setDefaultValues() {
 		"queue-arn": "arn:aws:sqs:us-west-2:193048895737",
 		"queue-url": "https://sqs.us-west-2.amazonaws.com/193048895737/somename",
 	})
+	configFname := filepath.Base(viper.ConfigFileUsed())
+	viper.SetDefault("S3BUCKET", map[string]string{
+		"region": "us-west-2",
+		"name":   "mybucket",
+		"s3path": configFname, // its in root of bucket
+	})
 }
 
-func handleConfigReadError(err error) {
+func handleConfigReadError(logger *log.Logger, err error) {
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-		createConfigFile()
+		createConfigFile(logger)
 	} else {
 		fmt.Println("Error reading config file:", err)
 		os.Exit(1)
 	}
 }
 
-func createConfigFile() {
-	fmt.Println("Config file not found, creating it with default values...")
+func createConfigFile(logger *log.Logger) {
+	logger.Printf("Config file %s not found, creating it with default values...", viper.ConfigFileUsed())
 
 	if err := viper.SafeWriteConfig(); err != nil {
 		if os.IsNotExist(err) {
@@ -93,5 +103,5 @@ func createConfigFile() {
 		}
 	}
 
-	fmt.Println("Config file created with default values.")
+	logger.Printf("Config file %s created with default values.", viper.ConfigFileUsed())
 }

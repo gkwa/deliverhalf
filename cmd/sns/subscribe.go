@@ -93,7 +93,7 @@ func subscribe(logger *log.Logger, region string) {
 		Endpoint: aws.String(sqsQueueARN), // Specify the ARN of your SQS queue
 	})
 	if err != nil {
-		panic(fmt.Sprintf("failed to subscribe to SNS topic: %v", err))
+		logger.Fatal(fmt.Sprintf("failed to subscribe to SNS topic: %v", err))
 	}
 
 	// Print the subscription ARN

@@ -1,11 +1,13 @@
 SOURCES := $(shell find . -name '*.go')
 TARGET := ./dist/deliverhalf_darwin_amd64_v1/deliverhalf
 
-run: deliverhalf
-	./deliverhalf
 
 deliverhalf: $(TARGET)
 	cp $< $@
+
+
+run: deliverhalf
+	./deliverhalf
 
 all:
 	goreleaser build --snapshot --clean

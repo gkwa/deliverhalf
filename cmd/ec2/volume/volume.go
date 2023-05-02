@@ -79,7 +79,7 @@ func getVolumes(logger *log.Logger) {
 
 	volumes, err := getVolumesForInstance(context.Background(), svc, instanceId)
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Getting volumes for instance %s failed with error %s", instanceId, err)
 	}
 
 	volumeTags := extractVolumeTags(volumes)

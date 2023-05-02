@@ -53,7 +53,7 @@ func ParseJsonFromFile(logger *log.Logger, filename string) map[string]interface
 	// read the JSON file into a byte slice
 	jsonBlob, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic(err)
+		logger.Fatalf("reading json into byte slice failed with error %s", err)
 	}
 
 	// create a map to hold the decoded JSON data
@@ -62,7 +62,7 @@ func ParseJsonFromFile(logger *log.Logger, filename string) map[string]interface
 	// unmarshal the JSON data into the map
 	err = json.Unmarshal(jsonBlob, &data)
 	if err != nil {
-		panic(err)
+		logger.Fatalf("Unmarshalling json data into map failed with error %s", err)
 	}
 	return data
 }
