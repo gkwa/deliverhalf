@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -27,5 +28,18 @@ func FileExists(logger *log.Logger, filePath string) bool {
 		return false
 	} else {
 		return true
+	}
+}
+
+func PrintMap(m map[string]interface{}, prefix string) {
+	for key, value := range m {
+		fmt.Printf("%s%s: ", prefix, key)
+		switch value.(type) {
+		case map[string]interface{}:
+			fmt.Println()
+			PrintMap(value.(map[string]interface{}), prefix+"  ")
+		default:
+			fmt.Printf("%v\n", value)
+		}
 	}
 }

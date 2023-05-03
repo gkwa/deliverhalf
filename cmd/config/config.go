@@ -83,18 +83,5 @@ func s3ConfigAbsPath(logger *log.Logger) string {
 func showSettings() {
 	// Get all configuration settings as a map
 	settings := viper.AllSettings()
-	printMap(settings, "")
-}
-
-func printMap(m map[string]interface{}, prefix string) {
-	for key, value := range m {
-		fmt.Printf("%s%s: ", prefix, key)
-		switch value.(type) {
-		case map[string]interface{}:
-			fmt.Println()
-			printMap(value.(map[string]interface{}), prefix+"  ")
-		default:
-			fmt.Printf("%v\n", value)
-		}
-	}
+	common.PrintMap(settings, "")
 }
