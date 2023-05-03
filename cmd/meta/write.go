@@ -30,7 +30,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := common.SetupLogger()
 
-		data := fetch(logger)
+		data := Fetch(logger)
 		writeDataWrapper(logger, data)
 		writeBase64DataWrapper(logger, data)
 	},

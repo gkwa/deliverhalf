@@ -28,7 +28,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := common.SetupLogger()
-		data := fetch(logger)
+		data := Fetch(logger)
 		fmt.Println(getMapAsString(logger, data))
 	},
 }
@@ -122,7 +122,7 @@ func fetchData() ([]byte, error) {
 	return body, nil
 }
 
-func fetch(logger *log.Logger) map[string]interface{} {
+func Fetch(logger *log.Logger) map[string]interface{} {
 	body, err := fetchData()
 	if err != nil {
 		logger.Fatalf("Error fetching data: %s", err)

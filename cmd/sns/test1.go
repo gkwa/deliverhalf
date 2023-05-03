@@ -80,3 +80,34 @@ func test1(logger *log.Logger) {
 
 	fmt.Println("Message ID: " + *result.MessageId)
 }
+
+func SendJsonStr(logger *log.Logger, jsonStr string) {
+	topicARN := viper.GetString("sns.topic-arn")
+	topicRegion := viper.GetString("sns.region")
+
+	msg := []byte(jsonStr)
+	base64Str := base64.StdEncoding.EncodeToString(msg)
+
+	logger.Printf("region: %s", topicRegion)
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
+	if err != nil {
+		panic(err)
+	}
+
+	client := sns.NewFromConfig(cfg)
+
+	input := &sns.PublishInput{
+		Message:  &base64Str,
+		TopicArn: &topicARN,
+	}
+
+	result, err := PublishMessage(context.TODO(), client, input)
+	if err != nil {
+		fmt.Println("Got an error publishing the message:")
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println("Message ID: " + *result.MessageId)
+}
