@@ -3,8 +3,6 @@ name: Release
   push:
     tags:
     - v*.*.*
-  schedule:
-  - cron: 01 13 * * SAT
 permissions:
   contents: write
 jobs:

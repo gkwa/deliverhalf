@@ -6,6 +6,8 @@ name: Go Build & Test
   pull_request:
     branches:
     - '*'
+  schedule:
+  - cron: 01 13 * * SAT
 jobs:
   build:
     strategy:
