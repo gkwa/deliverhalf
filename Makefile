@@ -4,7 +4,6 @@ TARGET := ./dist/deliverhalf_darwin_amd64_v1/deliverhalf
 deliverhalf: $(TARGET)
 	cp $< $@
 
-
 run: deliverhalf
 	./deliverhalf
 
