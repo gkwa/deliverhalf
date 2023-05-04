@@ -3,6 +3,7 @@ name: Testing
   push:
     branches:
     - dev
+    - master
     paths:
     - '**.go'
 jobs:
