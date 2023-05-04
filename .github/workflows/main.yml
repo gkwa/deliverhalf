@@ -9,8 +9,9 @@ jobs:
     steps:
     - name: Setup
       run: |
+        $env:PATH+=";$env:USERPRFILE\go\bin"
         go install mvdan.cc/gofumpt@latest
+        gofumpt --version
     - name: Build
       run: |
-        $env:PATH+=";$env:USERPRFILE\go\bin"
         goreleaser --snapshot --clean
