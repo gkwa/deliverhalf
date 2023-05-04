@@ -3,6 +3,7 @@ name: Release
   push:
     tags:
     - v*.*.*
+
 permissions:
   contents: write
 jobs:
