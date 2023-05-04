@@ -9,11 +9,13 @@ jobs:
     steps:
     - name: Setup
       run: |
-        $env:PATH+=";$env:USERPRFILE\go\bin"
         go install mvdan.cc/gofumpt@latest
+        $env:PATH+=";$env:USERPRFILE\go\bin"
         gofumpt --version
-        $env:PATH+=";C:\ProgramData\chocolatey\bin"
+
         choco install goreleaser
+        $env:PATH+=";C:\ProgramData\chocolatey\bin"
+        goreleaser --version
     - name: Build
       run: |
         gofumpt -l -w .
