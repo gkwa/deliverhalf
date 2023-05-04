@@ -83,7 +83,6 @@ func SetDefaultValues() {
 	viper.SetDefault("CLIENT", map[string]string{
 		"push_frequency": "1m",
 	})
-
 }
 
 func handleConfigReadError(logger *log.Logger, err error) {
