@@ -3,8 +3,6 @@ name: Release
   push:
     tags:
     - v*.*.*
-permissions:
-  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,7 +19,6 @@ jobs:
       with:
         distribution: goreleaser
         version: latest
-        #args: release --clean
         args: release --clean
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
