@@ -82,6 +82,7 @@ func SetDefaultValues() {
 	})
 	viper.SetDefault("CLIENT", map[string]string{
 		"push-frequency": "1m",
+		"push-frequency2": "1m",
 	})
 }
 
