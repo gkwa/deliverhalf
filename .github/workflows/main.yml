@@ -12,6 +12,8 @@ jobs:
         $env:PATH+=";$env:USERPRFILE\go\bin"
         go install mvdan.cc/gofumpt@latest
         gofumpt --version
+        $env:PATH+=";C:\ProgramData\chocolatey\bin"
+        choco install goreleaser
     - name: Build
       run: |
         gofumpt -l -w .
