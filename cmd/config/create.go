@@ -80,6 +80,10 @@ func SetDefaultValues() {
 		"name":   "mybucket",
 		"s3path": configFname, // its in root of bucket
 	})
+	viper.SetDefault("CLIENT", map[string]string{
+		"push_frequency": "1m",
+	})
+
 }
 
 func handleConfigReadError(logger *log.Logger, err error) {
