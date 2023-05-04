@@ -7,7 +7,7 @@ name: Go Build & Test
     branches:
     - '*'
   schedule:
-    interval: weekly
+  - cron: 01 13 * * SAT
 jobs:
   build:
     strategy:
