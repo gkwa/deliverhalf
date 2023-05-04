@@ -1,5 +1,5 @@
 name: Testing
-true:
+"on":
   push:
     branches:
     - dev
