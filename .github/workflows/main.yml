@@ -12,5 +12,6 @@ jobs:
         go install mvdan.cc/gofumpt@latest
     - name: Build
       run: |
+        $env:PATH+=";$env:USERPRFILE\go\bin"
         gofumpt -w $<
         goreleaser build --single-target --snapshot --clean
