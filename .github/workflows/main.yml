@@ -13,5 +13,4 @@ jobs:
     - name: Build
       run: |
         $env:PATH+=";$env:USERPRFILE\go\bin"
-        gofumpt -w $<
         goreleaser --snapshot --clean
