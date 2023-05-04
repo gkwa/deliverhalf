@@ -18,8 +18,8 @@ jobs:
         goreleaser --version
     - name: Build
       run: |
-        $env:PATH+=";$env:USERPRFILE\go\bin"
-        gofumpt -l -w .
+#        $env:PATH+=";$env:USERPRFILE\go\bin"
+#        gofumpt -l -w .
 
         $env:PATH+=";C:\ProgramData\chocolatey\bin"
         goreleaser --snapshot --clean
