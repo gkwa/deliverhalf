@@ -7,8 +7,10 @@ jobs:
   build:
     runs-on: windows-2019
     steps:
-    - name: Build
+    - name: Setup
       run: |
         go install mvdan.cc/gofumpt@latest
+    - name: Build
+      run: |
         gofumpt -w $<
         goreleaser build --single-target --snapshot --clean
