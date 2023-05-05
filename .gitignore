@@ -1,7 +1,2 @@
 deliverhalf
-
-dist/artifacts.json
-dist/metadata.json
-dist/config.yaml
-
 dist/deliverhalf_*_amd64_v1/deliverhalf*
