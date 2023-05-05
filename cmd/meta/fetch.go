@@ -77,7 +77,7 @@ func mergeData(logger *log.Logger, data []byte) map[string]interface{} {
 	return newData
 }
 
-func toJsonStr(logger *log.Logger, data map[string]interface{}) string {
+func mapToJsonStr(logger *log.Logger, data map[string]interface{}) string {
 	// Convert the map to a flat JSON string
 	jsonStr, err := json.Marshal(data)
 	if err != nil {

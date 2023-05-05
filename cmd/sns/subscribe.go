@@ -107,6 +107,11 @@ func getIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIden
 		for _, message := range receiveOutput.Messages {
 			pp.Printf("Received message: %s", message)
 			logger.Printf("Received message body: %s\n", *message.Body)
+			b64Msg, err := base64EncodeMessage(logger, message)
+			if err != nil {
+				logger.Fatalf("failed to enode message: %s", err)
+			}
+			logger.Printf("encoded message: %s", b64Msg)
 			doc, err := getIdentityDoc(logger, message)
 			if err != nil {
 				logger.Fatalf("failed trying to get identity document: %s", err)
@@ -115,6 +120,16 @@ func getIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIden
 			deleteMessage(logger, message, sqsClient, &config)
 		}
 	}
+}
+
+func base64EncodeMessage(logger *log.Logger, message types.Message) (string, error) {
+	jsonStr, err := json.Marshal(message)
+	if err != nil {
+		logger.Fatalf("Error serializing message: %s", err)
+	}
+	base64Str := base64.StdEncoding.EncodeToString([]byte(jsonStr))
+	logger.Printf("base64 encoded json message: %s", base64Str)
+	return string(base64Str), err
 }
 
 func deleteMessage(logger *log.Logger, message types.Message, client *sqs.Client, config *snsSqsConfig) {
