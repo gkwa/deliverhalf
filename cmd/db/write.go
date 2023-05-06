@@ -105,7 +105,7 @@ func Doit(db *gorm.DB, b64msg string) {
 		B64SNSMessageCompressed: compressed,
 	})
 	if result.Error != nil {
-		log.Logger.Println(result.Error)
+		log.Logger.Error(result.Error)
 	}
 
 	log.Logger.Printf("%d rows affected", result.RowsAffected)

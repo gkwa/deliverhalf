@@ -5,10 +5,10 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/spf13/cobra"
 	client "github.com/taylormonacelli/deliverhalf/cmd/client"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	sns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
@@ -24,7 +24,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("send called")
+		log.Logger.Trace("send called")
 		send()
 	},
 }
