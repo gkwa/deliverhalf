@@ -62,13 +62,14 @@ type VolumeTag struct {
 }
 
 func getVolumes(logger *log.Logger) {
+	logger.Print("reading from ./meta.json")
 	blob := meta.ParseJsonFromFile(logger, "meta.json")
 	instanceId := string(blob["instanceId"].(string))
-	regionName := string(blob["region"].(string))
-	logger.Printf("found instance id %s in region %s", instanceId, regionName)
+	region := string(blob["region"].(string))
+	logger.Printf("found instance id %s in region %s", instanceId, region)
 
 	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(regionName))
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
 		logger.Fatal(err)
 		os.Exit(1)

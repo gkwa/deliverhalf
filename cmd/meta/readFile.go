@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 
@@ -46,8 +45,7 @@ func init() {
 
 func ParseJsonFromFile(logger *log.Logger, filename string) map[string]interface{} {
 	if !common.FileExists(logger, filename) {
-		logger.Fatalf("Can't find file %s, qutting", filename)
-		os.Exit(1)
+		logger.Fatalf("Can't find file %s", filename)
 	}
 
 	// read the JSON file into a byte slice

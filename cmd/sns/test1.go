@@ -92,7 +92,7 @@ func SendJsonStr(logger *log.Logger, jsonStr string) {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		panic(err)
+		logger.Fatalf("failed to load config: %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)
@@ -104,10 +104,9 @@ func SendJsonStr(logger *log.Logger, jsonStr string) {
 
 	result, err := PublishMessage(context.TODO(), client, input)
 	if err != nil {
-		fmt.Println("Got an error publishing the message:")
-		fmt.Println(err)
+		logger.Printf("Got an error publishing the message: %s", err)
 		return
 	}
 
-	fmt.Println("Message ID: " + *result.MessageId)
+	logger.Printf("Message ID: %s", *result.MessageId)
 }

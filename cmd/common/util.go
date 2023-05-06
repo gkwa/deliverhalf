@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -42,4 +45,35 @@ func PrintMap(m map[string]interface{}, prefix string) {
 			fmt.Printf("%v\n", value)
 		}
 	}
+}
+
+func compresStrToB64(logger *log.Logger, str string) (string, error) {
+	// Create a buffer to write the compressed data to
+	var buf bytes.Buffer
+
+	// Create a gzip writer that writes to the buffer
+	gz := gzip.NewWriter(&buf)
+
+	// Write the string to the gzip writer
+	if _, err := gz.Write([]byte(str)); err != nil {
+		log.Fatal(err)
+	}
+
+	// Close the gzip writer to flush any remaining data
+	if err := gz.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Get the compressed data as a byte slice
+	compressedData := buf.Bytes()
+
+	// Base64 encode the compressed data
+	encodedData := base64.StdEncoding.EncodeToString(compressedData)
+
+	logger.Printf("Original size: %d bytes\n", len(str))
+	logger.Printf("Compressed size: %d bytes\n", len(compressedData))
+	logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
+	logger.Printf("Base64 encoded data: %s\n", encodedData)
+	
+	return encodedData, nil
 }

@@ -12,6 +12,8 @@ import (
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/sns"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/watchdog"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/watchdog/listen"
 )
 
 func main() {
