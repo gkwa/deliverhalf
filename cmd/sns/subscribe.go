@@ -9,6 +9,10 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	// "gorm.io/driver/sqlite" // Sqlite driver based on GGO
+	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
+
+	"gorm.io/gorm"
 
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
@@ -17,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -91,6 +96,14 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 	// Create an SQS client
 	sqsClient := sqs.NewFromConfig(cfg)
 
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	// Auto Migrate
+	db.AutoMigrate(&mydb.IdentityBlob{})
+
 	// Receive messages from the SQS queue
 	for {
 		receiveOutput, err := sqsClient.ReceiveMessage(context.Background(), &sqs.ReceiveMessageInput{
@@ -108,12 +121,9 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 			if err != nil {
 				logging.Logger.Fatalf("failed to enode message: %s", err)
 			}
-			logging.Logger.Tracef("encoded message: %s", b64Msg)
-			doc, err := getIdentityDoc(message)
-			if err != nil {
-				logging.Logger.Fatalf("failed trying to get identity document: %s", err)
-			}
-			logging.Logger.Trace(doc)
+			// base64 encoded types.Message
+			mydb.Doit(db, b64Msg)
+
 			deleteMessage(message, sqsClient, &config)
 		}
 	}
