@@ -7,13 +7,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 )
 
 // clearCmd represents the clear command
@@ -28,8 +27,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("clear called")
-		logger := common.SetupLogger()
-		main(logger)
+		main()
 	},
 }
 
@@ -89,7 +87,7 @@ func RemoveMessage(c context.Context, api SQSDeleteMessageAPI, input *sqs.Delete
 	return api.DeleteMessage(c, input)
 }
 
-func main(logger *log.Logger) {
+func main() {
 	queue := flag.String("q", "", "The name of the queue")
 	messageHandle := flag.String("m", "", "The receipt handle of the message")
 	flag.Parse()
@@ -101,7 +99,7 @@ func main(logger *log.Logger) {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		logger.Fatalf("configuration error %s", err)
+		logging.Logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sqs.NewFromConfig(cfg)

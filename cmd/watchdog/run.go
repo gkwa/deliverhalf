@@ -5,11 +5,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	db "github.com/taylormonacelli/deliverhalf/cmd/db"
 	sns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
@@ -25,8 +23,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		run(logger)
+		run()
 	},
 }
 
@@ -44,19 +41,19 @@ func init() {
 	// runCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func listenForSnsMessages(logger *log.Logger, c chan<- string) {
+func listenForSnsMessages(c chan<- string) {
 	// simulate a long running task
 	// time.Sleep(3 * time.Second)
 	region := viper.GetString("sns.region")
-	sns.GetIdentityDocFromSNS(logger, region)
+	sns.GetIdentityDocFromSNS(region)
 	c <- "longRunningFunc completed"
 }
 
-func run(logger *log.Logger) {
+func run() {
 	c := make(chan string)
 
-	go listenForSnsMessages(logger, c)
-	db.Test2(logger)
+	go listenForSnsMessages(c)
+	db.Test2()
 
 	// do other work here while listenForSnsMessages runs in the background
 	fmt.Println("Doing other work...")

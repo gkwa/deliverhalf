@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -43,15 +43,15 @@ func init() {
 	// readFileCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func ParseJsonFromFile(logger *log.Logger, filename string) map[string]interface{} {
-	if !common.FileExists(logger, filename) {
-		logger.Fatalf("Can't find file %s", filename)
+func ParseJsonFromFile(filename string) map[string]interface{} {
+	if !common.FileExists(filename) {
+		logging.Logger.Fatalf("Can't find file %s", filename)
 	}
 
 	// read the JSON file into a byte slice
 	jsonBlob, err := ioutil.ReadFile(filename)
 	if err != nil {
-		logger.Fatalf("reading json into byte slice failed with error %s", err)
+		logging.Logger.Fatalf("reading json into byte slice failed with error %s", err)
 	}
 
 	// create a map to hold the decoded JSON data
@@ -60,7 +60,7 @@ func ParseJsonFromFile(logger *log.Logger, filename string) map[string]interface
 	// unmarshal the JSON data into the map
 	err = json.Unmarshal(jsonBlob, &data)
 	if err != nil {
-		logger.Fatalf("Unmarshalling json data into map failed with error %s", err)
+		logging.Logger.Fatalf("Unmarshalling json data into map failed with error %s", err)
 	}
 	return data
 }

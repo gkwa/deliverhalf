@@ -6,15 +6,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // snapshotCmd represents the snapshot command
@@ -28,9 +27,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		createVolumeSnapshot(logger)
-		queryRegionForSnapshotsWithTag(logger, "us-west-2")
+		createVolumeSnapshot()
+		queryRegionForSnapshotsWithTag("us-west-2")
 	},
 }
 
@@ -75,11 +73,11 @@ func genSnapTags() []types.Tag {
 	return tags
 }
 
-func createVolumeSnapshot(logger *log.Logger) (string, error) {
+func createVolumeSnapshot() (string, error) {
 	volumeID := "vol-08f2578d51865489b"
 	region := "us-west-2"
 
-	snapshotID, err := snapAndTagVolume(logger, volumeID, region)
+	snapshotID, err := snapAndTagVolume(volumeID, region)
 	if err != nil {
 		return "", err
 	}
@@ -87,30 +85,30 @@ func createVolumeSnapshot(logger *log.Logger) (string, error) {
 	return snapshotID, err
 }
 
-func snapAndTagVolume(logger *log.Logger, volumeID string, region string) (string, error) {
+func snapAndTagVolume(volumeID string, region string) (string, error) {
 	tags := genSnapTags()
 	description := genSnapDesc()
 
-	tagsStr := joinTagsToStr(logger, tags)
-	logger.Printf("Creating snapshot with description '%s' for "+
+	tagsStr := joinTagsToStr(tags)
+	logging.Logger.Printf("Creating snapshot with description '%s' for "+
 		"volumeID: %s in region: %s and tagging with: '%s'",
 		description, volumeID, region, tagsStr)
 
-	snapshotID, err := snapVolume(logger, volumeID, region, description)
+	snapshotID, err := snapVolume(volumeID, region, description)
 	if err != nil {
-		logger.Printf("Error snapshotting volume: %s", err)
+		logging.Logger.Printf("Error snapshotting volume: %s", err)
 		return "", err
 	}
 
-	logger.Printf("Snapshot created with ID: %s\n", snapshotID)
-	err = tagSnapshot(logger, snapshotID, region, tags)
+	logging.Logger.Printf("Snapshot created with ID: %s\n", snapshotID)
+	err = tagSnapshot(snapshotID, region, tags)
 	return "", err
 }
 
-func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc string) (string, error) {
-	cfg, err := myec2.CreateConfig(logger, region)
+func snapVolume(volumeID string, region string, snapshotDesc string) (string, error) {
+	cfg, err := myec2.CreateConfig(region)
 	if err != nil {
-		logger.Fatalf("Could not create config %s", err)
+		logging.Logger.Fatalf("Could not create config %s", err)
 	}
 
 	ec2svc := ec2.NewFromConfig(cfg)
@@ -125,7 +123,7 @@ func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc
 		VolumeId: aws.String(volumeID),
 	})
 	if err != nil {
-		logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
+		logging.Logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
 			*input.VolumeId, err)
 	}
 
@@ -133,8 +131,8 @@ func snapVolume(logger *log.Logger, volumeID string, region string, snapshotDesc
 	return snapshotID, err
 }
 
-func queryRegionForSnapshotsWithTag(logger *log.Logger, region string) {
-	cfg, err := myec2.CreateConfig(logger, region)
+func queryRegionForSnapshotsWithTag(region string) {
+	cfg, err := myec2.CreateConfig(region)
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	// Get all snapshots with tag key "CreatedBy" and value "deliverhalf"
@@ -157,7 +155,7 @@ func queryRegionForSnapshotsWithTag(logger *log.Logger, region string) {
 	}
 }
 
-func tagSnapshot(logger *log.Logger, snapshotID string, region string, tags []types.Tag) error {
+func tagSnapshot(snapshotID string, region string, tags []types.Tag) error {
 	// Add a tag to the snapshot
 
 	tagInput := &ec2.CreateTagsInput{
@@ -165,23 +163,23 @@ func tagSnapshot(logger *log.Logger, snapshotID string, region string, tags []ty
 		Tags:      tags,
 	}
 
-	cfg, err := myec2.CreateConfig(logger, region)
+	cfg, err := myec2.CreateConfig(region)
 	if err != nil {
-		logger.Fatalf("Could not create config %s", err)
+		logging.Logger.Fatalf("Could not create config %s", err)
 	}
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	_, err = ec2svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
-		logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
+		logging.Logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
-		tagsStr := joinTagsToStr(logger, tags)
-		logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
+		tagsStr := joinTagsToStr(tags)
+		logging.Logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
 	}
 	return err
 }
 
-func joinTagsToStr(logger *log.Logger, tags []types.Tag) string {
+func joinTagsToStr(tags []types.Tag) string {
 	var sb strings.Builder
 	for _, s := range tags {
 		sb.WriteString(*s.Key + "=" + *s.Value + ";")

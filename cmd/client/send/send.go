@@ -6,11 +6,9 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/spf13/cobra"
-	cmd "github.com/taylormonacelli/deliverhalf/cmd/client"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	client "github.com/taylormonacelli/deliverhalf/cmd/client"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	sns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
@@ -27,13 +25,12 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("send called")
-		logger := common.SetupLogger()
-		send(logger)
+		send()
 	},
 }
 
 func init() {
-	cmd.ClientCmd.AddCommand(sendCmd)
+	client.ClientCmd.AddCommand(sendCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -45,9 +42,9 @@ func init() {
 	// sendCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func send(logger *log.Logger) {
-	data := meta.Fetch(logger)
+func send() {
+	data := meta.Fetch()
 	jsBytes, _ := json.MarshalIndent(data, "", "    ")
 	jsonStr := string(jsBytes)
-	sns.SendJsonStr(logger, jsonStr)
+	sns.SendJsonStr(jsonStr)
 }

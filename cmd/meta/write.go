@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -28,11 +28,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-
-		data := Fetch(logger)
-		writeDataWrapper(logger, data)
-		writeBase64DataWrapper(logger, data)
+		data := Fetch()
+		writeDataWrapper(data)
+		writeBase64DataWrapper(data)
 	},
 }
 
@@ -50,19 +48,19 @@ func init() {
 	// writeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func writeBase64DataWrapper(logger *log.Logger, data interface{}) error {
+func writeBase64DataWrapper(data interface{}) error {
 	wd, err := getWorkingDirectory()
 	if err != nil {
 		fmt.Println("Error getting working directory:", err)
 	}
 
 	dataPath := filepath.Join(wd, "meta-b64.txt")
-	deleteFile(logger, dataPath)
+	deleteFile(dataPath)
 
 	// encode the map to a JSON-encoded byte array
 	b, err := json.Marshal(data)
 	if err != nil {
-		logger.Println("Error encoding map to JSON:", err)
+		logging.Logger.Println("Error encoding map to JSON:", err)
 	}
 
 	base64Str := base64.StdEncoding.EncodeToString(b)
@@ -70,36 +68,36 @@ func writeBase64DataWrapper(logger *log.Logger, data interface{}) error {
 		return fmt.Errorf("Error writing base64-encoded JSON to file: %s", err)
 	}
 
-	logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
+	logging.Logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
 
 	return nil
 }
 
-func getMapAsString(logger *log.Logger, data interface{}) string {
+func getMapAsString(data interface{}) string {
 	jsBytes, _ := json.MarshalIndent(data, "", "    ")
 	return string(jsBytes)
 }
 
-func writeData(logger *log.Logger, dataPath string, data interface{}) error {
-	jsonStr := getMapAsString(logger, data)
+func writeData(dataPath string, data interface{}) error {
+	jsonStr := getMapAsString(data)
 
 	if err := ioutil.WriteFile(dataPath, []byte(jsonStr), 0o644); err != nil {
 		return fmt.Errorf("Error writing JSON to file: %s", err)
 	}
 
-	logger.Printf("Successfully wrote JSON data to file %s", dataPath)
+	logging.Logger.Printf("Successfully wrote JSON data to file %s", dataPath)
 	return nil
 }
 
-func writeDataWrapper(logger *log.Logger, data interface{}) error {
+func writeDataWrapper(data interface{}) error {
 	wd, err := getWorkingDirectory()
 	if err != nil {
 		fmt.Println("Error getting working directory:", err)
 	}
 	dataPath := filepath.Join(wd, "meta.json")
 
-	deleteFile(logger, dataPath)
-	err = writeData(logger, dataPath, data)
+	deleteFile(dataPath)
+	err = writeData(dataPath, data)
 	if err != nil {
 		fmt.Println("Error writing data to file:", err)
 	}
@@ -115,16 +113,16 @@ func getWorkingDirectory() (string, error) {
 	return wd, nil
 }
 
-func deleteFile(logger *log.Logger, filePath string) error {
-	if !common.FileExists(logger, filePath) {
-		logger.Printf("%s doesn't exist, nothing to delete", filePath)
+func deleteFile(filePath string) error {
+	if !common.FileExists(filePath) {
+		logging.Logger.Printf("%s doesn't exist, nothing to delete", filePath)
 		return nil
 	}
 
-	logger.Printf("deleting %s", filePath)
+	logging.Logger.Printf("deleting %s", filePath)
 	err := os.Remove(filePath)
 	if err != nil {
-		logger.Printf("%s couldn't be deleted", filePath)
+		logging.Logger.Printf("%s couldn't be deleted", filePath)
 		return err
 	}
 	return nil

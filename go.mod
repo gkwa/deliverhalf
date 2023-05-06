@@ -13,6 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.20.9
 	github.com/glebarez/sqlite v1.8.0
 	github.com/k0kubun/pp v3.0.1+incompatible
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

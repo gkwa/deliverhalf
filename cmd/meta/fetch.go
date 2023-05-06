@@ -7,13 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/spf13/cobra"
 
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // fetchCmd represents the fetch command
@@ -27,9 +26,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		data := Fetch(logger)
-		fmt.Println(getMapAsString(logger, data))
+		data := Fetch()
+		fmt.Println(getMapAsString(data))
 	},
 }
 
@@ -66,10 +64,10 @@ func addEpochTimestamp(data map[string]interface{}) map[string]interface{} {
 	return data
 }
 
-func mergeData(logger *log.Logger, data []byte) map[string]interface{} {
+func mergeData(data []byte) map[string]interface{} {
 	parsedData, err := parseData(data)
 	if err != nil {
-		logger.Fatalf("Error parsing JSON data:%s", err)
+		logging.Logger.Fatalf("Error parsing JSON data:%s", err)
 	}
 
 	// add epochtime timestamp blob
@@ -77,23 +75,23 @@ func mergeData(logger *log.Logger, data []byte) map[string]interface{} {
 	return newData
 }
 
-func mapToJsonStr(logger *log.Logger, data map[string]interface{}) string {
+func mapToJsonStr(data map[string]interface{}) string {
 	// Convert the map to a flat JSON string
 	jsonStr, err := json.Marshal(data)
 	if err != nil {
-		logger.Println("Error parsing JSON data:", err)
+		logging.Logger.Println("Error parsing JSON data:", err)
 	}
-	logger.Printf("json: %s", jsonStr)
+	logging.Logger.Printf("json: %s", jsonStr)
 	return string(jsonStr)
 }
 
-func toJsonPrettyStr(logger *log.Logger, data map[string]interface{}) string {
+func toJsonPrettyStr(data map[string]interface{}) string {
 	// Convert the map to a pretty JSON string
 	jsonStrPretty, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		logger.Println("Error marshaling data:", err)
+		logging.Logger.Println("Error marshaling data:", err)
 	}
-	logger.Printf("json: %s", jsonStrPretty)
+	logging.Logger.Printf("json: %s", jsonStrPretty)
 	return string(jsonStrPretty)
 }
 
@@ -122,12 +120,12 @@ func fetchData() ([]byte, error) {
 	return body, nil
 }
 
-func Fetch(logger *log.Logger) map[string]interface{} {
+func Fetch() map[string]interface{} {
 	body, err := fetchData()
 	if err != nil {
-		logger.Fatalf("Error fetching data: %s", err)
+		logging.Logger.Fatalf("Error fetching data: %s", err)
 	}
 
-	mergedData := mergeData(logger, body)
+	mergedData := mergeData(body)
 	return mergedData
 }

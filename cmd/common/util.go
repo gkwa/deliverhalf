@@ -5,27 +5,13 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"log"
 	"os"
 
-	"gopkg.in/natefinch/lumberjack.v2"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
-func SetupLogger() *log.Logger {
-	logFile := &lumberjack.Logger{
-		Filename:   "deliverhalf.log",
-		MaxSize:    10, // In megabytes
-		MaxBackups: 0,
-		MaxAge:     365, // In days
-		Compress:   true,
-	}
-	defer logFile.Close()
-	logWriter := io.MultiWriter(logFile, os.Stderr)
-	return log.New(logWriter, "", log.Ldate|log.Ltime|log.Lmicroseconds|log.LUTC|log.Lshortfile)
-}
-
-func FileExists(logger *log.Logger, filePath string) bool {
+func FileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	if os.IsNotExist(err) {
 		return false
@@ -47,7 +33,7 @@ func PrintMap(m map[string]interface{}, prefix string) {
 	}
 }
 
-func CompresStrToB64(logger *log.Logger, str string) (string, error) {
+func CompresStrToB64(str string) (string, error) {
 	// Create a buffer to write the compressed data to
 	var buf bytes.Buffer
 
@@ -70,10 +56,10 @@ func CompresStrToB64(logger *log.Logger, str string) (string, error) {
 	// Base64 encode the compressed data
 	encodedData := base64.StdEncoding.EncodeToString(compressedData)
 
-	logger.Printf("Original size: %d bytes\n", len(str))
-	logger.Printf("Compressed size: %d bytes\n", len(compressedData))
-	logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
-	logger.Printf("Base64 encoded data: %s\n", encodedData)
+	logging.Logger.Printf("Original size: %d bytes\n", len(str))
+	logging.Logger.Printf("Compressed size: %d bytes\n", len(compressedData))
+	logging.Logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
+	logging.Logger.Printf("Base64 encoded data: %s\n", encodedData)
 
 	return encodedData, nil
 }

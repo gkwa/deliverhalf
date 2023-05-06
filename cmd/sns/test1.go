@@ -7,12 +7,11 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 
 	"github.com/spf13/viper"
@@ -29,8 +28,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		test1(logger)
+		test1()
 	},
 }
 
@@ -48,7 +46,7 @@ func init() {
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test1(logger *log.Logger) {
+func test1() {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
@@ -61,7 +59,7 @@ func test1(logger *log.Logger) {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		logger.Fatalf("configuration error %s", err)
+		logging.Logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)
@@ -81,18 +79,18 @@ func test1(logger *log.Logger) {
 	fmt.Println("Message ID: " + *result.MessageId)
 }
 
-func SendJsonStr(logger *log.Logger, jsonStr string) {
+func SendJsonStr(jsonStr string) {
 	topicARN := viper.GetString("sns.topic-arn")
 	topicRegion := viper.GetString("sns.region")
 
 	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
-	logger.Printf("region: %s", topicRegion)
+	logging.Logger.Printf("region: %s", topicRegion)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		logger.Fatalf("failed to load config: %s", err)
+		logging.Logger.Fatalf("failed to load config: %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)
@@ -104,9 +102,9 @@ func SendJsonStr(logger *log.Logger, jsonStr string) {
 
 	result, err := PublishMessage(context.TODO(), client, input)
 	if err != nil {
-		logger.Printf("Got an error publishing the message: %s", err)
+		logging.Logger.Printf("Got an error publishing the message: %s", err)
 		return
 	}
 
-	logger.Printf("Message ID: %s", *result.MessageId)
+	logging.Logger.Printf("Message ID: %s", *result.MessageId)
 }

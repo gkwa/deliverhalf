@@ -17,6 +17,7 @@ import (
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // fetchCmd represents the fetch command
@@ -31,10 +32,9 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("fetch called")
-		logger := common.SetupLogger()
 		region := "us-west-2"
-		// test(logger, region)
-		fetchConfigFromS3(logger, region)
+		// test( region)
+		fetchConfigFromS3(region)
 	},
 }
 
@@ -46,9 +46,9 @@ type BucketBasics struct {
 	S3Client *s3.Client
 }
 
-func test(logger *log.Logger, region string) {
-	fetchConfigFromS3(logger, region)
-	reloadConfig(logger)
+func test(region string) {
+	fetchConfigFromS3(region)
+	reloadConfig()
 	showSettings()
 }
 
@@ -91,11 +91,11 @@ func (basics BucketBasics) DownloadFile(bucketName string, objectKey string, fil
 	return err
 }
 
-func fetchConfigFromS3(logger *log.Logger, region string) {
+func fetchConfigFromS3(region string) {
 	// Load the AWS SDK configuration from the environment or shared config file
-	cfg, err := myec2.CreateConfig(logger, region)
+	cfg, err := myec2.CreateConfig(region)
 	if err != nil {
-		logger.Fatalf("Could not create config %s", err)
+		logging.Logger.Fatalf("Could not create config %s", err)
 	}
 
 	// Create a new S3 downloader
@@ -104,26 +104,25 @@ func fetchConfigFromS3(logger *log.Logger, region string) {
 	// Decode the string
 	decoded, err := base64.StdEncoding.DecodeString("c3RyZWFtYm94LWRlbGl2ZXJoYWxm")
 	if err != nil {
-		logger.Fatalf("Failed to decode base64 string")
+		logging.Logger.Fatalf("Failed to decode base64 string")
 	}
 	bucketName := string(decoded)
 
 	decoded, err = base64.StdEncoding.DecodeString("LmRlbGl2ZXJoYWxmLnlhbWw=")
 	if err != nil {
-		logger.Fatalf("Failed to decode base64 string")
+		logging.Logger.Fatalf("Failed to decode base64 string")
 	}
 	config := string(decoded)
 
-	SetDefaultValues()
 	s3path := fmt.Sprintf("s3://%s/%s", bucketName, config)
 
 	// Print the decoded string
-	logger.Printf("Decoded s3path: %s", s3path)
+	logging.Logger.Printf("Decoded s3path: %s", s3path)
 
 	// Create a file to write the downloaded data to
 	file, err := os.Create(config)
 	if err != nil {
-		logger.Fatalf("error creating file %s: %s", config, err)
+		logging.Logger.Fatalf("error creating file %s: %s", config, err)
 	}
 	defer file.Close()
 
@@ -134,8 +133,8 @@ func fetchConfigFromS3(logger *log.Logger, region string) {
 	// Create a new BucketBasics object with the S3 client
 	basics := BucketBasics{S3Client: downloader}
 
-	if common.FileExists(logger, localTargetPath) {
-		logger.Printf("Overwriting %s with file from %s", localTargetPath, s3path)
+	if common.FileExists(localTargetPath) {
+		logging.Logger.Printf("Overwriting %s with file from %s", localTargetPath, s3path)
 	}
 
 	// Download the object from S3 and store it in a local file
@@ -145,5 +144,5 @@ func fetchConfigFromS3(logger *log.Logger, region string) {
 	}
 
 	// Print success message
-	logger.Printf("%s downloaded to %s", s3path, localTargetPath)
+	logging.Logger.Printf("%s downloaded to %s", s3path, localTargetPath)
 }

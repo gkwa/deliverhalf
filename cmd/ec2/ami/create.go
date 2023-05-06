@@ -6,15 +6,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // createCmd represents the create command
@@ -28,8 +27,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		test(logger)
+		test()
 	},
 }
 
@@ -63,21 +61,21 @@ func init() {
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test(logger *log.Logger) {
+func test() {
 	amiName := fmt.Sprintf("my-image-%08d", time.Now().Unix())
 	ami := AMI{
 		Name:       amiName,
 		SnapshotID: "snap-081fa6c4cec7f21f7",
 		Region:     "us-west-2",
 	}
-	createAMIFromSnapshot(logger, &ami)
-	logger.Printf("Created AMI with properties %s", ami)
+	createAMIFromSnapshot(&ami)
+	logging.Logger.Printf("Created AMI with properties %s", ami)
 }
 
-func createAMIFromSnapshot(logger *log.Logger, ami *AMI) error {
-	cfg, err := myec2.CreateConfig(logger, ami.Region)
+func createAMIFromSnapshot(ami *AMI) error {
+	cfg, err := myec2.CreateConfig(ami.Region)
 	if err != nil {
-		logger.Fatal(fmt.Errorf("error trying to create ami from snapshot id %s: %s", ami.SnapshotID, err))
+		logging.Logger.Fatal(fmt.Errorf("error trying to create ami from snapshot id %s: %s", ami.SnapshotID, err))
 	}
 
 	ec2svc := ec2.NewFromConfig(cfg)
@@ -102,7 +100,7 @@ func createAMIFromSnapshot(logger *log.Logger, ami *AMI) error {
 
 	result, err := ec2svc.RegisterImage(context.Background(), input)
 	if err != nil {
-		logger.Fatalf("Error registering new AMI with snapshotID %s: %s", ami.SnapshotID, err)
+		logging.Logger.Fatalf("Error registering new AMI with snapshotID %s: %s", ami.SnapshotID, err)
 	}
 	ami.ImageID = *result.ImageId
 

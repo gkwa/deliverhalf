@@ -5,12 +5,12 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
-
-var cfgFile string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -36,14 +36,19 @@ func Execute() {
 	}
 }
 
+var cfgFile string
+
 func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.deliverhalf.yaml)")
+	RootCmd.PersistentFlags().String("log-level",
+		"info", "Log level (trace, debug, info, warn, error, fatal, panic)",
+	)
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -66,6 +71,35 @@ func initConfig() {
 		viper.SetConfigName(".deliverhalf")
 	}
 
+	SetDefaultValues()
+
+	viper.BindPFlag("log-level", RootCmd.Flags().Lookup("log-level"))
+	logLevel := logging.ParseLogLevel(viper.GetString("log-level"))
+	logging.Logger.SetLevel(logLevel)
+
+	viper.BindPFlag("config", RootCmd.Flags().Lookup("config"))
+
 	viper.AutomaticEnv() // read in environment variables that match
 	viper.ReadInConfig()
+}
+
+func SetDefaultValues() {
+	viper.SetDefault("SNS", map[string]string{
+		"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic",
+		"region":    "us-west-2",
+	})
+	viper.SetDefault("SQS", map[string]string{
+		"region":    "us-west-2",
+		"queue-arn": "arn:aws:sqs:us-west-2:193048895737",
+		"queue-url": "https://sqs.us-west-2.amazonaws.com/193048895737/somename",
+	})
+	configFname := filepath.Base(viper.ConfigFileUsed())
+	viper.SetDefault("S3BUCKET", map[string]string{
+		"region": "us-west-2",
+		"name":   "mybucket",
+		"s3path": configFname, // its in root of bucket
+	})
+	viper.SetDefault("CLIENT", map[string]string{
+		"push-frequency": "1m",
+	})
 }

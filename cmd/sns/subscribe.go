@@ -7,10 +7,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/k0kubun/pp"
 
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
@@ -19,8 +17,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // subscribeCmd represents the subscribe command
@@ -34,9 +32,8 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
 		region := "us-west-2"
-		GetIdentityDocFromSNS(logger, region)
+		GetIdentityDocFromSNS(region)
 	},
 }
 
@@ -61,8 +58,9 @@ type snsSqsConfig struct {
 	sqsQueueURL string
 }
 
-func GetIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIdentityDocument, error) {
+func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error) {
 	// Load the AWS configuration
+	logging.Logger.Debug("debugging is fun")
 
 	config := snsSqsConfig{
 		topicRegion: viper.GetString("sns.region"),
@@ -71,9 +69,9 @@ func GetIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIden
 		sqsQueueURL: viper.GetString("sqs.queue-url"),
 	}
 
-	cfg, err := myec2.CreateConfig(logger, config.topicRegion)
+	cfg, err := myec2.CreateConfig(config.topicRegion)
 	if err != nil {
-		logger.Fatalf("Could not create config %s", err)
+		logging.Logger.Fatalf("Could not create config %s", err)
 	}
 
 	snsClient := sns.NewFromConfig(cfg)
@@ -84,11 +82,11 @@ func GetIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIden
 		Endpoint: aws.String(config.sqsQueueARN), // Specify the ARN of your SQS queue
 	})
 	if err != nil {
-		logger.Fatalf("failed to subscribe to SNS topic: %v", err)
+		logging.Logger.Fatalf("failed to subscribe to SNS topic: %v", err)
 	}
 
 	// Print the subscription ARN
-	logger.Printf("Subscribed to SNS topic with ARN %s\n", *subscribeOutput.SubscriptionArn)
+	logging.Logger.Debugf("Subscribed to SNS topic with ARN %s\n", *subscribeOutput.SubscriptionArn)
 
 	// Create an SQS client
 	sqsClient := sqs.NewFromConfig(cfg)
@@ -101,92 +99,91 @@ func GetIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIden
 			WaitTimeSeconds:     20,                             // Change this to the desired wait time
 		})
 		if err != nil {
-			logger.Fatalf("failed to receive SQS message: %v", err)
+			logging.Logger.Fatalf("failed to receive SQS message: %v", err)
 		}
 
 		for _, message := range receiveOutput.Messages {
-			pp.Printf("Received message: %s", message)
-			logger.Printf("Received message body: %s\n", *message.Body)
-			b64Msg, err := base64EncodeMessage(logger, message)
+			logging.Logger.Tracef("Received message body: %s\n", *message.Body)
+			b64Msg, err := base64EncodeMessage(message)
 			if err != nil {
-				logger.Fatalf("failed to enode message: %s", err)
+				logging.Logger.Fatalf("failed to enode message: %s", err)
 			}
-			logger.Printf("encoded message: %s", b64Msg)
-			doc, err := getIdentityDoc(logger, message)
+			logging.Logger.Tracef("encoded message: %s", b64Msg)
+			doc, err := getIdentityDoc(message)
 			if err != nil {
-				logger.Fatalf("failed trying to get identity document: %s", err)
+				logging.Logger.Fatalf("failed trying to get identity document: %s", err)
 			}
-			pp.Println(doc)
-			deleteMessage(logger, message, sqsClient, &config)
+			logging.Logger.Trace(doc)
+			deleteMessage(message, sqsClient, &config)
 		}
 	}
 }
 
-func base64EncodeMessage(logger *log.Logger, message types.Message) (string, error) {
+func base64EncodeMessage(message types.Message) (string, error) {
 	jsonStr, err := json.Marshal(message)
 	if err != nil {
-		logger.Fatalf("Error serializing message: %s", err)
+		logging.Logger.Fatalf("Error serializing message: %s", err)
 	}
 	base64Str := base64.StdEncoding.EncodeToString([]byte(jsonStr))
-	logger.Printf("base64 encoded json message: %s", base64Str)
+	logging.Logger.Tracef("base64 encoded json message: %s", base64Str)
 	return string(base64Str), err
 }
 
-func deleteMessage(logger *log.Logger, message types.Message, client *sqs.Client, config *snsSqsConfig) {
+func deleteMessage(message types.Message, client *sqs.Client, config *snsSqsConfig) {
 	// Delete the message from the queue
 	_, err := client.DeleteMessage(context.Background(), &sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(config.sqsQueueURL), // Specify the URL of your SQS queue
 		ReceiptHandle: message.ReceiptHandle,          // Use the receipt handle to identify the message
 	})
 	if err != nil {
-		logger.Fatalf("failed to delete SQS message: %v", err)
+		logging.Logger.Fatalf("failed to delete SQS message: %v", err)
 	}
 }
 
-func getIdentityDoc(logger *log.Logger, message types.Message) (imds.InstanceIdentityDocument, error) {
+func getIdentityDoc(message types.Message) (imds.InstanceIdentityDocument, error) {
 	myStr := *message.Body
-	x2, err := genMessageFromStr(logger, myStr)
+	x2, err := genMessageFromStr(myStr)
 	if err != nil {
-		logger.Fatalf("error unmarshalling types.Message from %s: %s", myStr, err)
+		logging.Logger.Fatalf("error unmarshalling types.Message from %s: %s", myStr, err)
 	}
 	b64Str := *x2.Message
 
-	decoded, err := b64DecodeStr(logger, b64Str)
+	decoded, err := b64DecodeStr(b64Str)
 	if err != nil {
-		logger.Fatalf("could not base64 decode %s: %s", *message.Body, err)
+		logging.Logger.Fatalf("could not base64 decode %s: %s", *message.Body, err)
 	}
 
-	doc, err := genIdentityDocFromJsonStr(logger, decoded)
+	doc, err := genIdentityDocFromJsonStr(decoded)
 	if err != nil {
-		logger.Fatalf("could not generate Identiydocument from %s: %s", decoded, err)
+		logging.Logger.Fatalf("could not generate Identiydocument from %s: %s", decoded, err)
 	}
 	return doc, err
 }
 
-func genMessageFromStr(logger *log.Logger, str string) (sns.PublishInput, error) {
+func genMessageFromStr(str string) (sns.PublishInput, error) {
 	var pi sns.PublishInput
 
 	err := json.Unmarshal([]byte(str), &pi)
 	if err != nil {
-		logger.Fatalf("unmarshalling %s into an sns.PublishInput failed: %s", str, err)
+		logging.Logger.Fatalf("unmarshalling %s into an sns.PublishInput failed: %s", str, err)
 	}
 	return pi, err
 }
 
-func b64DecodeStr(logger *log.Logger, b64 string) (string, error) {
+func b64DecodeStr(b64 string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(b64)
 	if err != nil {
-		logger.Fatalf("Failed to decode base64 string '%s': %s", b64, err)
+		logging.Logger.Fatalf("Failed to decode base64 string '%s': %s", b64, err)
 	}
 	return string(decoded), err
 }
 
-func genIdentityDocFromJsonStr(logger *log.Logger, jsStr string) (imds.InstanceIdentityDocument, error) {
+func genIdentityDocFromJsonStr(jsStr string) (imds.InstanceIdentityDocument, error) {
 	var doc imds.InstanceIdentityDocument
 
 	err := json.Unmarshal([]byte(jsStr), &doc)
 	if err != nil {
-		logger.Fatalf("unmarshalling %s into an imds.InstanceIdentityDocument failed: %s", jsStr, err)
+		logging.Logger.Fatalf("unmarshalling %s into an imds.InstanceIdentityDocument failed: %s", jsStr, err)
 	}
 	return doc, err
 }

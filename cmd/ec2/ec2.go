@@ -6,13 +6,13 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // ec2Cmd represents the ec2 command
@@ -54,10 +54,10 @@ func init() {
 	// ec2Cmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func CreateConfig(logger *log.Logger, region string) (aws.Config, error) {
+func CreateConfig(region string) (aws.Config, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		logger.Fatal(err)
+		logging.Logger.Fatal(err)
 		os.Exit(1)
 	}
 	return cfg, err

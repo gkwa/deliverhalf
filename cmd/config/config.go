@@ -5,13 +5,13 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/taylormonacelli/deliverhalf/cmd"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // configCmd represents the config command
@@ -26,9 +26,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := common.SetupLogger()
-		logger.Println("config called")
-
+		logging.Logger.Trace("config called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)
@@ -55,7 +53,7 @@ func init() {
 	// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func reloadConfig(logger *log.Logger) {
+func reloadConfig() {
 	// Read the default configuration file
 	err := viper.ReadInConfig()
 	if err != nil {
@@ -71,7 +69,7 @@ func reloadConfig(logger *log.Logger) {
 	}
 }
 
-func s3ConfigAbsPath(logger *log.Logger) string {
+func s3ConfigAbsPath() string {
 	bucket := viper.GetString("s3bucket.name")
 	s3ConfigPath := viper.GetString("s3bucket.path")
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	"github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // test1Cmd represents the test1 command
@@ -22,9 +22,8 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("test1 called")
-		logger := common.SetupLogger()
-		result := s3ConfigAbsPath(logger)
-		logger.Println(result)
+		result := s3ConfigAbsPath()
+		logging.Logger.Println(result)
 	},
 }
 
