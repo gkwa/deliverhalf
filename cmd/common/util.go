@@ -47,7 +47,7 @@ func PrintMap(m map[string]interface{}, prefix string) {
 	}
 }
 
-func compresStrToB64(logger *log.Logger, str string) (string, error) {
+func CompresStrToB64(logger *log.Logger, str string) (string, error) {
 	// Create a buffer to write the compressed data to
 	var buf bytes.Buffer
 
@@ -74,6 +74,6 @@ func compresStrToB64(logger *log.Logger, str string) (string, error) {
 	logger.Printf("Compressed size: %d bytes\n", len(compressedData))
 	logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
 	logger.Printf("Base64 encoded data: %s\n", encodedData)
-	
+
 	return encodedData, nil
 }

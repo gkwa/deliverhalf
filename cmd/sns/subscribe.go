@@ -36,7 +36,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := common.SetupLogger()
 		region := "us-west-2"
-		getIdentityDocFromSNS(logger, region)
+		GetIdentityDocFromSNS(logger, region)
 	},
 }
 
@@ -61,7 +61,7 @@ type snsSqsConfig struct {
 	sqsQueueURL string
 }
 
-func getIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIdentityDocument, error) {
+func GetIdentityDocFromSNS(logger *log.Logger, region string) (imds.InstanceIdentityDocument, error) {
 	// Load the AWS configuration
 
 	config := snsSqsConfig{

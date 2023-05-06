@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
+	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
 	"gorm.io/gorm"
 )
 
 type IdentityBlob struct {
 	gorm.Model
-	Doc           imds.InstanceIdentityDocument `gorm:"embedded"`
-	B64SNSMessage string
+	Doc                     imds.ExtendedInstanceIdentityDocument `gorm:"embedded"`
+	B64SNSMessage           string
+	B64SNSMessageCompressed string
 }
