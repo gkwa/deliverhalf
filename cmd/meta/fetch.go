@@ -12,7 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // fetchCmd represents the fetch command
@@ -67,7 +67,7 @@ func addEpochTimestamp(data map[string]interface{}) map[string]interface{} {
 func mergeData(data []byte) map[string]interface{} {
 	parsedData, err := parseData(data)
 	if err != nil {
-		logging.Logger.Fatalf("Error parsing JSON data:%s", err)
+		log.Logger.Fatalf("Error parsing JSON data:%s", err)
 	}
 
 	// add epochtime timestamp blob
@@ -79,9 +79,9 @@ func mapToJsonStr(data map[string]interface{}) string {
 	// Convert the map to a flat JSON string
 	jsonStr, err := json.Marshal(data)
 	if err != nil {
-		logging.Logger.Println("Error parsing JSON data:", err)
+		log.Logger.Println("Error parsing JSON data:", err)
 	}
-	logging.Logger.Printf("json: %s", jsonStr)
+	log.Logger.Printf("json: %s", jsonStr)
 	return string(jsonStr)
 }
 
@@ -89,9 +89,9 @@ func toJsonPrettyStr(data map[string]interface{}) string {
 	// Convert the map to a pretty JSON string
 	jsonStrPretty, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		logging.Logger.Println("Error marshaling data:", err)
+		log.Logger.Println("Error marshaling data:", err)
 	}
-	logging.Logger.Printf("json: %s", jsonStrPretty)
+	log.Logger.Printf("json: %s", jsonStrPretty)
 	return string(jsonStrPretty)
 }
 
@@ -123,7 +123,7 @@ func fetchData() ([]byte, error) {
 func Fetch() map[string]interface{} {
 	body, err := fetchData()
 	if err != nil {
-		logging.Logger.Fatalf("Error fetching data: %s", err)
+		log.Logger.Fatalf("Error fetching data: %s", err)
 	}
 
 	mergedData := mergeData(body)

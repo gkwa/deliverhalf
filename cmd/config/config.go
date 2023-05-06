@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/taylormonacelli/deliverhalf/cmd"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // configCmd represents the config command
@@ -26,7 +26,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logging.Logger.Trace("config called")
+		log.Logger.Trace("config called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)

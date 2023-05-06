@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -60,7 +60,7 @@ func writeBase64DataWrapper(data interface{}) error {
 	// encode the map to a JSON-encoded byte array
 	b, err := json.Marshal(data)
 	if err != nil {
-		logging.Logger.Println("Error encoding map to JSON:", err)
+		log.Logger.Println("Error encoding map to JSON:", err)
 	}
 
 	base64Str := base64.StdEncoding.EncodeToString(b)
@@ -68,7 +68,7 @@ func writeBase64DataWrapper(data interface{}) error {
 		return fmt.Errorf("Error writing base64-encoded JSON to file: %s", err)
 	}
 
-	logging.Logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
+	log.Logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
 
 	return nil
 }
@@ -85,7 +85,7 @@ func writeData(dataPath string, data interface{}) error {
 		return fmt.Errorf("Error writing JSON to file: %s", err)
 	}
 
-	logging.Logger.Printf("Successfully wrote JSON data to file %s", dataPath)
+	log.Logger.Printf("Successfully wrote JSON data to file %s", dataPath)
 	return nil
 }
 
@@ -115,14 +115,14 @@ func getWorkingDirectory() (string, error) {
 
 func deleteFile(filePath string) error {
 	if !common.FileExists(filePath) {
-		logging.Logger.Printf("%s doesn't exist, nothing to delete", filePath)
+		log.Logger.Printf("%s doesn't exist, nothing to delete", filePath)
 		return nil
 	}
 
-	logging.Logger.Printf("deleting %s", filePath)
+	log.Logger.Printf("deleting %s", filePath)
 	err := os.Remove(filePath)
 	if err != nil {
-		logging.Logger.Printf("%s couldn't be deleted", filePath)
+		log.Logger.Printf("%s couldn't be deleted", filePath)
 		return err
 	}
 	return nil

@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	"gorm.io/gorm"
 
 	// "gorm.io/driver/sqlite" // Sqlite driver based on GGO
@@ -31,7 +31,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logging.Logger.Println("config called")
+		log.Logger.Println("config called")
 
 		fmt.Println("write called")
 		// test(logger)
@@ -67,36 +67,36 @@ func getSnsMessageFromStr(str string) (types.Message, error) {
 func Doit(db *gorm.DB, b64msg string) {
 	compressed, err := common.CompresStrToB64(b64msg)
 	if err != nil {
-		logging.Logger.Fatalf("cant compress %s: %s", b64msg, err)
+		log.Logger.Fatalf("cant compress %s: %s", b64msg, err)
 	}
 
 	// Decode the string
 	decoded, err := base64.StdEncoding.DecodeString(b64msg)
 	if err != nil {
-		logging.Logger.Fatal("Failed to decode base64 string")
+		log.Logger.Fatal("Failed to decode base64 string")
 	}
 
 	message, err := getSnsMessageFromStr(string(decoded))
 	if err != nil {
-		logging.Logger.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	body := make(map[string]interface{})
 	err = json.Unmarshal([]byte(*message.Body), &body)
 	if err != nil {
-		logging.Logger.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	subMessageBytes, err := base64.StdEncoding.DecodeString(body["Message"].(string))
 	if err != nil {
-		logging.Logger.Fatal("Failed to decode base64 string")
+		log.Logger.Fatal("Failed to decode base64 string")
 	}
 	subMessage := string(subMessageBytes)
 
 	var doc imds.ExtendedInstanceIdentityDocument
 	err = json.Unmarshal([]byte(subMessage), &doc)
 	if err != nil {
-		logging.Logger.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	result := db.Create(&IdentityBlob{
@@ -105,10 +105,10 @@ func Doit(db *gorm.DB, b64msg string) {
 		B64SNSMessageCompressed: compressed,
 	})
 	if result.Error != nil {
-		logging.Logger.Println(result.Error)
+		log.Logger.Println(result.Error)
 	}
 
-	logging.Logger.Printf("%d rows affected", result.RowsAffected)
+	log.Logger.Printf("%d rows affected", result.RowsAffected)
 
 	var blobs []IdentityBlob
 	db.Find(&blobs)

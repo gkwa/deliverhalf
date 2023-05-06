@@ -5,10 +5,9 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"fmt"
-	"log"
 	"os"
 
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 func FileExists(filePath string) bool {
@@ -42,12 +41,12 @@ func CompresStrToB64(str string) (string, error) {
 
 	// Write the string to the gzip writer
 	if _, err := gz.Write([]byte(str)); err != nil {
-		log.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	// Close the gzip writer to flush any remaining data
 	if err := gz.Close(); err != nil {
-		log.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	// Get the compressed data as a byte slice
@@ -56,10 +55,10 @@ func CompresStrToB64(str string) (string, error) {
 	// Base64 encode the compressed data
 	encodedData := base64.StdEncoding.EncodeToString(compressedData)
 
-	logging.Logger.Printf("Original size: %d bytes\n", len(str))
-	logging.Logger.Printf("Compressed size: %d bytes\n", len(compressedData))
-	logging.Logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
-	logging.Logger.Printf("Base64 encoded data: %s\n", encodedData)
+	log.Logger.Printf("Original size: %d bytes\n", len(str))
+	log.Logger.Printf("Compressed size: %d bytes\n", len(compressedData))
+	log.Logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
+	log.Logger.Printf("Base64 encoded data: %s\n", encodedData)
 
 	return encodedData, nil
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // dbCmd represents the db command
@@ -22,7 +22,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logging.Logger.Println("db called")
+		log.Logger.Println("db called")
 
 		if len(args) == 0 {
 			cmd.Help()

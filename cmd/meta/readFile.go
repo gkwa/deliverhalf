@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -45,13 +45,13 @@ func init() {
 
 func ParseJsonFromFile(filename string) map[string]interface{} {
 	if !common.FileExists(filename) {
-		logging.Logger.Fatalf("Can't find file %s", filename)
+		log.Logger.Fatalf("Can't find file %s", filename)
 	}
 
 	// read the JSON file into a byte slice
 	jsonBlob, err := ioutil.ReadFile(filename)
 	if err != nil {
-		logging.Logger.Fatalf("reading json into byte slice failed with error %s", err)
+		log.Logger.Fatalf("reading json into byte slice failed with error %s", err)
 	}
 
 	// create a map to hold the decoded JSON data
@@ -60,7 +60,7 @@ func ParseJsonFromFile(filename string) map[string]interface{} {
 	// unmarshal the JSON data into the map
 	err = json.Unmarshal(jsonBlob, &data)
 	if err != nil {
-		logging.Logger.Fatalf("Unmarshalling json data into map failed with error %s", err)
+		log.Logger.Fatalf("Unmarshalling json data into map failed with error %s", err)
 	}
 	return data
 }

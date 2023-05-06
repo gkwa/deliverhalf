@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // ec2Cmd represents the ec2 command
@@ -57,7 +57,7 @@ func init() {
 func CreateConfig(region string) (aws.Config, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		logging.Logger.Fatal(err)
+		log.Logger.Fatal(err)
 		os.Exit(1)
 	}
 	return cfg, err

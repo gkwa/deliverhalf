@@ -10,7 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -99,7 +99,7 @@ func main() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		logging.Logger.Fatalf("configuration error %s", err)
+		log.Logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sqs.NewFromConfig(cfg)

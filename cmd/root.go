@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -74,8 +74,8 @@ func initConfig() {
 	SetDefaultValues()
 
 	viper.BindPFlag("log-level", RootCmd.Flags().Lookup("log-level"))
-	logLevel := logging.ParseLogLevel(viper.GetString("log-level"))
-	logging.Logger.SetLevel(logLevel)
+	logLevel := log.ParseLogLevel(viper.GetString("log-level"))
+	log.Logger.SetLevel(logLevel)
 
 	viper.BindPFlag("config", RootCmd.Flags().Lookup("config"))
 

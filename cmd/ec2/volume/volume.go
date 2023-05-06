@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 )
 
@@ -62,16 +62,16 @@ type VolumeTag struct {
 }
 
 func getVolumes() {
-	logging.Logger.Print("reading from ./meta.json")
+	log.Logger.Print("reading from ./meta.json")
 	blob := meta.ParseJsonFromFile("meta.json")
 	instanceId := string(blob["instanceId"].(string))
 	region := string(blob["region"].(string))
-	logging.Logger.Printf("found instance id %s in region %s", instanceId, region)
+	log.Logger.Printf("found instance id %s in region %s", instanceId, region)
 
 	// Load the AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		logging.Logger.Fatal(err)
+		log.Logger.Fatal(err)
 		os.Exit(1)
 	}
 
@@ -80,7 +80,7 @@ func getVolumes() {
 
 	volumes, err := getVolumesForInstance(context.Background(), svc, instanceId)
 	if err != nil {
-		logging.Logger.Fatalf("Getting volumes for instance %s failed with error %s", instanceId, err)
+		log.Logger.Fatalf("Getting volumes for instance %s failed with error %s", instanceId, err)
 	}
 
 	volumeTags := extractVolumeTags(volumes)

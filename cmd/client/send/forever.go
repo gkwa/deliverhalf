@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	sns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
@@ -52,7 +52,7 @@ func sendForever() error {
 		jsBytes, _ := json.MarshalIndent(data, "", "    ")
 		jsonStr := string(jsBytes)
 		sns.SendJsonStr(jsonStr)
-		logging.Logger.Printf("sleeping %s", delay.String())
+		log.Logger.Printf("sleeping %s", delay.String())
 		time.Sleep(delay)
 	}
 }

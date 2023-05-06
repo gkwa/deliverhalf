@@ -13,7 +13,7 @@ import (
 	types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // snapshotCmd represents the snapshot command
@@ -90,17 +90,17 @@ func snapAndTagVolume(volumeID string, region string) (string, error) {
 	description := genSnapDesc()
 
 	tagsStr := joinTagsToStr(tags)
-	logging.Logger.Printf("Creating snapshot with description '%s' for "+
+	log.Logger.Printf("Creating snapshot with description '%s' for "+
 		"volumeID: %s in region: %s and tagging with: '%s'",
 		description, volumeID, region, tagsStr)
 
 	snapshotID, err := snapVolume(volumeID, region, description)
 	if err != nil {
-		logging.Logger.Printf("Error snapshotting volume: %s", err)
+		log.Logger.Printf("Error snapshotting volume: %s", err)
 		return "", err
 	}
 
-	logging.Logger.Printf("Snapshot created with ID: %s\n", snapshotID)
+	log.Logger.Printf("Snapshot created with ID: %s\n", snapshotID)
 	err = tagSnapshot(snapshotID, region, tags)
 	return "", err
 }
@@ -108,7 +108,7 @@ func snapAndTagVolume(volumeID string, region string) (string, error) {
 func snapVolume(volumeID string, region string, snapshotDesc string) (string, error) {
 	cfg, err := myec2.CreateConfig(region)
 	if err != nil {
-		logging.Logger.Fatalf("Could not create config %s", err)
+		log.Logger.Fatalf("Could not create config %s", err)
 	}
 
 	ec2svc := ec2.NewFromConfig(cfg)
@@ -123,7 +123,7 @@ func snapVolume(volumeID string, region string, snapshotDesc string) (string, er
 		VolumeId: aws.String(volumeID),
 	})
 	if err != nil {
-		logging.Logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
+		log.Logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
 			*input.VolumeId, err)
 	}
 
@@ -165,16 +165,16 @@ func tagSnapshot(snapshotID string, region string, tags []types.Tag) error {
 
 	cfg, err := myec2.CreateConfig(region)
 	if err != nil {
-		logging.Logger.Fatalf("Could not create config %s", err)
+		log.Logger.Fatalf("Could not create config %s", err)
 	}
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	_, err = ec2svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
-		logging.Logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
+		log.Logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
 		tagsStr := joinTagsToStr(tags)
-		logging.Logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
+		log.Logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
 	}
 	return err
 }

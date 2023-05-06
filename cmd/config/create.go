@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // createCmd represents the create command
@@ -70,7 +70,7 @@ func handleConfigReadError(err error) {
 }
 
 func createConfigFile() {
-	logging.Logger.Printf("Config file %s not found, creating it with default values...", viper.ConfigFileUsed())
+	log.Logger.Printf("Config file %s not found, creating it with default values...", viper.ConfigFileUsed())
 
 	if err := viper.SafeWriteConfig(); err != nil {
 		if os.IsNotExist(err) {
@@ -81,5 +81,5 @@ func createConfigFile() {
 		}
 	}
 
-	logging.Logger.Printf("Config file %s created with default values.", viper.ConfigFileUsed())
+	log.Logger.Printf("Config file %s created with default values.", viper.ConfigFileUsed())
 }

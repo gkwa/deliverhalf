@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/viper"
 )
@@ -77,7 +77,7 @@ func test2() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		logging.Logger.Fatalf("configuration error %s", err)
+		log.Logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)

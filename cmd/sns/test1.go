@@ -11,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/spf13/cobra"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 
 	"github.com/spf13/viper"
@@ -59,7 +59,7 @@ func test1() {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		logging.Logger.Fatalf("configuration error %s", err)
+		log.Logger.Fatalf("configuration error %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)
@@ -86,11 +86,11 @@ func SendJsonStr(jsonStr string) {
 	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
-	logging.Logger.Printf("region: %s", topicRegion)
+	log.Logger.Printf("region: %s", topicRegion)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
-		logging.Logger.Fatalf("failed to load config: %s", err)
+		log.Logger.Fatalf("failed to load config: %s", err)
 	}
 
 	client := sns.NewFromConfig(cfg)
@@ -102,9 +102,9 @@ func SendJsonStr(jsonStr string) {
 
 	result, err := PublishMessage(context.TODO(), client, input)
 	if err != nil {
-		logging.Logger.Printf("Got an error publishing the message: %s", err)
+		log.Logger.Printf("Got an error publishing the message: %s", err)
 		return
 	}
 
-	logging.Logger.Printf("Message ID: %s", *result.MessageId)
+	log.Logger.Printf("Message ID: %s", *result.MessageId)
 }

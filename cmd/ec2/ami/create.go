@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
-	"github.com/taylormonacelli/deliverhalf/cmd/logging"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // createCmd represents the create command
@@ -69,13 +69,13 @@ func test() {
 		Region:     "us-west-2",
 	}
 	createAMIFromSnapshot(&ami)
-	logging.Logger.Printf("Created AMI with properties %s", ami)
+	log.Logger.Printf("Created AMI with properties %s", ami)
 }
 
 func createAMIFromSnapshot(ami *AMI) error {
 	cfg, err := myec2.CreateConfig(ami.Region)
 	if err != nil {
-		logging.Logger.Fatal(fmt.Errorf("error trying to create ami from snapshot id %s: %s", ami.SnapshotID, err))
+		log.Logger.Fatal(fmt.Errorf("error trying to create ami from snapshot id %s: %s", ami.SnapshotID, err))
 	}
 
 	ec2svc := ec2.NewFromConfig(cfg)
@@ -100,7 +100,7 @@ func createAMIFromSnapshot(ami *AMI) error {
 
 	result, err := ec2svc.RegisterImage(context.Background(), input)
 	if err != nil {
-		logging.Logger.Fatalf("Error registering new AMI with snapshotID %s: %s", ami.SnapshotID, err)
+		log.Logger.Fatalf("Error registering new AMI with snapshotID %s: %s", ami.SnapshotID, err)
 	}
 	ami.ImageID = *result.ImageId
 
