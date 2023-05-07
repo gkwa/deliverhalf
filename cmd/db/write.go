@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
@@ -64,19 +63,13 @@ func getSnsMessageFromStr(str string) (types.Message, error) {
 	return message, nil
 }
 
-func Doit(db *gorm.DB, b64msg string) {
-	compressed, err := common.CompresStrToB64(b64msg)
+func Doit(db *gorm.DB, str string) {
+	compressed, err := common.CompresStrToB64(str)
 	if err != nil {
-		log.Logger.Fatalf("cant compress %s: %s", b64msg, err)
+		log.Logger.Fatalf("cant compress %s: %s", str, err)
 	}
 
-	// Decode the string
-	decoded, err := base64.StdEncoding.DecodeString(b64msg)
-	if err != nil {
-		log.Logger.Fatal("Failed to decode base64 string")
-	}
-
-	message, err := getSnsMessageFromStr(string(decoded))
+	message, err := getSnsMessageFromStr(string(str))
 	if err != nil {
 		log.Logger.Fatal(err)
 	}
@@ -101,24 +94,14 @@ func Doit(db *gorm.DB, b64msg string) {
 
 	result := db.Create(&IdentityBlob{
 		Doc:                     doc,
-		B64SNSMessage:           b64msg,
+		B64SNSMessage:           str,
 		B64SNSMessageCompressed: compressed,
 	})
 	if result.Error != nil {
 		log.Logger.Error(result.Error)
 	}
 
-	log.Logger.Printf("%d rows affected", result.RowsAffected)
-
-	var blobs []IdentityBlob
-	db.Find(&blobs)
-	pp.Println(blobs)
-
-	jsonBytes, err := json.MarshalIndent(blobs, "", "  ")
-	if err != nil {
-		fmt.Println("Error marshaling JSON:", err)
-	}
-	fmt.Println(string(jsonBytes))
+	log.Logger.Debugf("%d rows affected", result.RowsAffected)
 }
 
 func Test2() {

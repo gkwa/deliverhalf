@@ -55,10 +55,10 @@ func CompresStrToB64(str string) (string, error) {
 	// Base64 encode the compressed data
 	encodedData := base64.StdEncoding.EncodeToString(compressedData)
 
-	log.Logger.Printf("Original size: %d bytes\n", len(str))
-	log.Logger.Printf("Compressed size: %d bytes\n", len(compressedData))
-	log.Logger.Printf("Base64 encoded size: %d bytes\n", len(encodedData))
-	log.Logger.Printf("Base64 encoded data: %s\n", encodedData)
+	log.Logger.Tracef("Original size: %d bytes\n", len(str))
+	log.Logger.Tracef("Compressed size: %d bytes\n", len(compressedData))
+	log.Logger.Tracef("Base64 encoded size: %d bytes\n", len(encodedData))
+	log.Logger.Tracef("Base64 encoded data: %s\n", encodedData)
 
 	return encodedData, nil
 }

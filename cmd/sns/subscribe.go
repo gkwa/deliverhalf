@@ -117,12 +117,11 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 
 		for _, message := range receiveOutput.Messages {
 			log.Logger.Tracef("Received message body: %s\n", *message.Body)
-			b64Msg, err := base64EncodeMessage(message)
+			jsonStr, err := json.Marshal(message)
 			if err != nil {
-				log.Logger.Fatalf("failed to enode message: %s", err)
+				log.Logger.Fatalf("failed to marshal message, error: %s", err)
 			}
-			// base64 encoded types.Message
-			mydb.Doit(db, b64Msg)
+			mydb.Doit(db, string(jsonStr))
 
 			deleteMessage(message, sqsClient, &config)
 		}
