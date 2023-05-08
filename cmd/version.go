@@ -4,8 +4,9 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
-	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // versionCmd represents the version command
@@ -19,7 +20,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Logger.Traceln("deliverhalf version 0.0.19")
+		fmt.Println("deliverhalf version 0.0.19")
 	},
 }
 
