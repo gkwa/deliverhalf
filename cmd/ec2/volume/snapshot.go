@@ -100,7 +100,7 @@ func snapAndTagVolume(volumeID string, region string) (string, error) {
 		return "", err
 	}
 
-	log.Logger.Printf("Snapshot created with ID: %s\n", snapshotID)
+	log.Logger.Printf("Snapshot created with ID: %s", snapshotID)
 	err = tagSnapshot(snapshotID, region, tags)
 	return "", err
 }
@@ -118,7 +118,6 @@ func snapVolume(volumeID string, region string, snapshotDesc string) (string, er
 		Description: aws.String(snapshotDesc),
 	}
 
-	// Create a snapshot
 	resp, err := ec2svc.CreateSnapshot(context.Background(), &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeID),
 	})
@@ -133,6 +132,9 @@ func snapVolume(volumeID string, region string, snapshotDesc string) (string, er
 
 func queryRegionForSnapshotsWithTag(region string) {
 	cfg, err := myec2.CreateConfig(region)
+	if err != nil {
+		log.Logger.Fatalf("can't create ec2 config in region %s: %s", region, err)
+	}
 	ec2svc := ec2.NewFromConfig(cfg)
 
 	// Get all snapshots with tag key "CreatedBy" and value "deliverhalf"

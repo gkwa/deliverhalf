@@ -43,13 +43,13 @@ func init() {
 	// readFileCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func ParseJsonFromFile(filename string) map[string]interface{} {
-	if !common.FileExists(filename) {
-		log.Logger.Fatalf("Can't find file %s", filename)
+func ParseJsonFromFile(path string) map[string]interface{} {
+	if !common.FileExists(path) {
+		log.Logger.Fatalf("Can't find file %s", path)
 	}
 
 	// read the JSON file into a byte slice
-	jsonBlob, err := ioutil.ReadFile(filename)
+	jsonBlob, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Logger.Fatalf("reading json into byte slice failed with error %s", err)
 	}

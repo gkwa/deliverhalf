@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
 )
@@ -61,31 +63,92 @@ type VolumeTag struct {
 	Size int32
 }
 
-func getVolumes() {
-	log.Logger.Print("reading from ./meta.json")
-	blob := meta.ParseJsonFromFile("meta.json")
-	instanceId := string(blob["instanceId"].(string))
-	region := string(blob["region"].(string))
-	log.Logger.Printf("found instance id %s in region %s", instanceId, region)
+func getVolumesFromInstanceIdentity(doc imds.ExtendedInstanceIdentityDocument, volumes *[]types.Volume) error {
+	region := doc.Region
+	instanceId := doc.InstanceId
 
 	// Load the AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
 		log.Logger.Fatal(err)
-		os.Exit(1)
 	}
 
 	// Create a new EC2 client
 	svc := ec2.NewFromConfig(cfg)
 
-	volumes, err := getVolumesForInstance(context.Background(), svc, instanceId)
+	err = getVolumesForInstance(context.Background(), svc, instanceId, volumes)
 	if err != nil {
 		log.Logger.Fatalf("Getting volumes for instance %s failed with error %s", instanceId, err)
 	}
 
-	volumeTags := extractVolumeTags(volumes)
-
+	volumeTags := extractVolumeTags(*volumes)
 	printVolumeTags(volumeTags)
+	return err
+}
+
+func testListVolumes() error {
+	jsonStr := `
+	{
+		"accountId": "9876543210",
+		"architecture": "x86",
+		"availabilityZone": "us-east-1b",
+		"billingProducts": [
+		"bp-12345678"
+		],
+		"devpayProductCodes": null,
+		"epochtime": 1736815649,
+		"imageId": "ami-0987654321",
+		"instanceId": "i-0987654321",
+		"instanceType": "t2.micro",
+		"kernelId": null,
+		"marketplaceProductCodes": null,
+		"pendingTime": "2023-05-07T14:30:00Z",
+		"privateIp": "10.0.0.1",
+		"ramdiskId": null,
+		"region": "us-east-1",
+		"version": "2021-05-01"
+		}
+		`
+
+	jsonStr = `{
+		"accountId": "193048895737",
+		"architecture": "x86_64",
+		"availabilityZone": "ap-southeast-2a",
+		"billingProducts": [
+			"bp-6ba54002"
+		],
+		"devpayProductCodes": null,
+		"epochtime": 1683470368,
+		"imageId": "ami-0b6125e77f55f0eff",
+		"instanceId": "i-0488845dadd58da52",
+		"instanceType": "t3a.2xlarge",
+		"kernelId": null,
+		"marketplaceProductCodes": null,
+		"pendingTime": "2023-04-03T14:05:38Z",
+		"privateIp": "172.31.18.139",
+		"ramdiskId": null,
+		"region": "ap-southeast-2",
+		"version": "2017-09-30"
+	}`
+	doc, err := meta.GetIdentityDocFromStr(jsonStr)
+	if err != nil {
+		log.Logger.Fatalf("cant create %T: %s", doc, err)
+	}
+	var volumes []types.Volume
+	err = getVolumesFromInstanceIdentity(doc, &volumes)
+	if err != nil {
+		log.Logger.Error(err)
+		return err
+	}
+
+	// Marshal the Person struct to JSON with indentation
+	jsonData, err := json.MarshalIndent(volumes, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling struct to JSON:", err)
+	}
+	log.Logger.Trace(string(jsonData))
+	fmt.Print(string(jsonData))
+	return nil
 }
 
 func extractVolumeTags(volumes []types.Volume) map[string]VolumeTag {
@@ -119,7 +182,7 @@ func printVolumeTags(volumeTags map[string]VolumeTag) {
 	}
 }
 
-func getVolumesForInstance(ctx context.Context, svc *ec2.Client, instanceID string) ([]types.Volume, error) {
+func getVolumesForInstance(ctx context.Context, svc *ec2.Client, instanceID string, volumes *[]types.Volume) error {
 	input := &ec2.DescribeVolumesInput{
 		Filters: []types.Filter{
 			{
@@ -130,7 +193,9 @@ func getVolumesForInstance(ctx context.Context, svc *ec2.Client, instanceID stri
 	}
 	resp, err := svc.DescribeVolumes(ctx, input)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return resp.Volumes, nil
+
+	*volumes = append(*volumes, resp.Volumes...)
+	return nil
 }

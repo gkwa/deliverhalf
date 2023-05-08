@@ -4,10 +4,15 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/taylormonacelli/deliverhalf/cmd"
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 
 	"github.com/spf13/cobra"
 )
@@ -49,4 +54,55 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// metaCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func genPathToMetaJson() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "meta.json"), nil
+}
+
+func GetIdentityDocFromFile() (imds.ExtendedInstanceIdentityDocument, error) {
+	metaPath, err := genPathToMetaJson()
+	if err != nil {
+		log.Logger.Fatalf("error generating path to file storing jsonblob: %s", err)
+	}
+
+	var doc imds.ExtendedInstanceIdentityDocument
+
+	if !common.FileExists(metaPath) {
+		log.Logger.Fatalf("file %s doesn't exist, but i expect to use it to unmarshal an %T", metaPath, doc)
+	}
+
+	jsonBlob, err := os.ReadFile(metaPath)
+	if err != nil {
+		log.Logger.Fatalf("failed to read from file %s: %s", metaPath, err)
+	}
+	jsonStr := string(jsonBlob)
+
+	doc, err = GetIdentityDocFromStr(jsonStr)
+	if err != nil {
+		log.Logger.Fatalf("failed to unmarshal %s into an %T: %s", jsonStr, doc, err)
+	}
+
+	return doc, nil
+}
+
+func GetIdentityDocFromStr(str string) (imds.ExtendedInstanceIdentityDocument, error) {
+	// Check if the JSON string is valid
+	if json.Valid([]byte(str)) {
+		log.Logger.Trace("PASS: checking that json string is valid: %s", str)
+	} else {
+		log.Logger.Fatalf("JSON string is invalid: %s", str)
+	}
+
+	var doc imds.ExtendedInstanceIdentityDocument
+	err := json.Unmarshal([]byte(str), &doc)
+	if err != nil {
+		log.Logger.Fatalf("can't unmarshal %s into %T: %s", str, doc, err)
+	}
+
+	return doc, nil
 }
