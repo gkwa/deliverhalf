@@ -51,7 +51,7 @@ func init() {
 func writeBase64DataWrapper(data interface{}) error {
 	wd, err := getWorkingDirectory()
 	if err != nil {
-		fmt.Println("Error getting working directory:", err)
+		log.Logger.Traceln("Error getting working directory:", err)
 	}
 
 	dataPath := filepath.Join(wd, "meta-b64.txt")
@@ -92,14 +92,14 @@ func writeData(dataPath string, data interface{}) error {
 func writeDataWrapper(data interface{}) error {
 	wd, err := getWorkingDirectory()
 	if err != nil {
-		fmt.Println("Error getting working directory:", err)
+		log.Logger.Traceln("Error getting working directory:", err)
 	}
 	dataPath := filepath.Join(wd, "meta.json")
 
 	deleteFile(dataPath)
 	err = writeData(dataPath, data)
 	if err != nil {
-		fmt.Println("Error writing data to file:", err)
+		log.Logger.Traceln("Error writing data to file:", err)
 	}
 	return nil
 }

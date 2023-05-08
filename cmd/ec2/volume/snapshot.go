@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -148,12 +147,12 @@ func queryRegionForSnapshotsWithTag(region string) {
 	}
 	output, err := ec2svc.DescribeSnapshots(context.Background(), input1)
 	if err != nil {
-		fmt.Println("Error listing snapshots:", err)
+		log.Logger.Traceln("Error listing snapshots:", err)
 	}
 
 	// Print out the snapshot IDs
 	for _, snapshot := range output.Snapshots {
-		fmt.Println(*snapshot.SnapshotId)
+		log.Logger.Traceln(*snapshot.SnapshotId)
 	}
 }
 

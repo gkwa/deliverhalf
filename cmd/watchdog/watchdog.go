@@ -4,11 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // WatchdogCmd represents the watchdog command
@@ -22,7 +22,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("watchdog called")
+		log.Logger.Traceln("watchdog called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)

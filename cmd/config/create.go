@@ -4,7 +4,6 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -64,7 +63,7 @@ func handleConfigReadError(err error) {
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		createConfigFile()
 	} else {
-		fmt.Println("Error reading config file:", err)
+		log.Logger.Traceln("Error reading config file:", err)
 		os.Exit(1)
 	}
 }
@@ -75,7 +74,7 @@ func createConfigFile() {
 	if err := viper.SafeWriteConfig(); err != nil {
 		if os.IsNotExist(err) {
 			if err := viper.WriteConfig(); err != nil {
-				fmt.Println("Error writing config file:", err)
+				log.Logger.Traceln("Error writing config file:", err)
 				os.Exit(1)
 			}
 		}

@@ -4,11 +4,11 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // amiCmd represents the ami command
@@ -22,7 +22,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("ami called")
+		log.Logger.Traceln("ami called")
 
 		if len(args) == 0 {
 			cmd.Help()

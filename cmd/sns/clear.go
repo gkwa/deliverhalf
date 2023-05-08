@@ -6,7 +6,6 @@ package cmd
 import (
 	"context"
 	"flag"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -26,7 +25,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("clear called")
+		log.Logger.Traceln("clear called")
 		main()
 	},
 }
@@ -93,7 +92,7 @@ func main() {
 	flag.Parse()
 
 	if *queue == "" || *messageHandle == "" {
-		fmt.Println("You must supply a queue name (-q QUEUE) and message receipt handle (-m MESSAGE-HANDLE)")
+		log.Logger.Traceln("You must supply a queue name (-q QUEUE) and message receipt handle (-m MESSAGE-HANDLE)")
 		return
 	}
 
@@ -111,8 +110,8 @@ func main() {
 	// Get URL of queue
 	result, err := GetQueueURL(context.TODO(), client, qUInput)
 	if err != nil {
-		fmt.Println("Got an error getting the queue URL:")
-		fmt.Println(err)
+		log.Logger.Traceln("Got an error getting the queue URL:")
+		log.Logger.Traceln(err)
 		return
 	}
 
@@ -125,10 +124,10 @@ func main() {
 
 	_, err = RemoveMessage(context.TODO(), client, dMInput)
 	if err != nil {
-		fmt.Println("Got an error deleting the message:")
-		fmt.Println(err)
+		log.Logger.Traceln("Got an error deleting the message:")
+		log.Logger.Traceln(err)
 		return
 	}
 
-	fmt.Println("Deleted message from queue with URL " + *queueURL)
+	log.Logger.Traceln("Deleted message from queue with URL " + *queueURL)
 }

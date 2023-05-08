@@ -6,7 +6,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -31,7 +30,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("volume called")
+		log.Logger.Traceln("volume called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)
@@ -144,10 +143,10 @@ func testListVolumes() error {
 	// Marshal the Person struct to JSON with indentation
 	jsonData, err := json.MarshalIndent(volumes, "", "  ")
 	if err != nil {
-		fmt.Println("Error marshaling struct to JSON:", err)
+		log.Logger.Traceln("Error marshaling struct to JSON:", err)
 	}
 	log.Logger.Trace(string(jsonData))
-	fmt.Print(string(jsonData))
+	log.Logger.Trace(string(jsonData))
 	return nil
 }
 
@@ -172,13 +171,13 @@ func extractVolumeTags(volumes []types.Volume) map[string]VolumeTag {
 
 func printVolumeTags(volumeTags map[string]VolumeTag) {
 	for volumeID, volumeTag := range volumeTags {
-		fmt.Printf("Volume ID: %s\n", volumeID)
-		fmt.Printf("Size: %d\n", volumeTag.Size)
-		fmt.Printf("Tags:\n")
+		log.Logger.Tracef("Volume ID: %s\n", volumeID)
+		log.Logger.Tracef("Size: %d\n", volumeTag.Size)
+		log.Logger.Tracef("Tags:\n")
 		for _, tag := range volumeTag.Tags {
-			fmt.Printf("  - %s: %s\n", *tag.Key, *tag.Value)
+			log.Logger.Tracef("  - %s: %s\n", *tag.Key, *tag.Value)
 		}
-		fmt.Println()
+		log.Logger.Traceln()
 	}
 }
 

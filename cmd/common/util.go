@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
-	"fmt"
 	"os"
 
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -21,13 +20,13 @@ func FileExists(filePath string) bool {
 
 func PrintMap(m map[string]interface{}, prefix string) {
 	for key, value := range m {
-		fmt.Printf("%s%s: ", prefix, key)
+		log.Logger.Tracef("%s%s: ", prefix, key)
 		switch value.(type) {
 		case map[string]interface{}:
-			fmt.Println()
+			log.Logger.Traceln()
 			PrintMap(value.(map[string]interface{}), prefix+"  ")
 		default:
-			fmt.Printf("%v\n", value)
+			log.Logger.Tracef("%v\n", value)
 		}
 	}
 }

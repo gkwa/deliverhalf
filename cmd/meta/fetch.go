@@ -27,7 +27,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		data := Fetch()
-		fmt.Println(getMapAsString(data))
+		log.Logger.Traceln(getMapAsString(data))
 	},
 }
 

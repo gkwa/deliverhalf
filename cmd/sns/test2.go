@@ -6,7 +6,6 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
@@ -73,7 +72,7 @@ func test2() {
 	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
-	fmt.Printf("region: %s", topicRegion)
+	log.Logger.Tracef("region: %s", topicRegion)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
@@ -89,10 +88,10 @@ func test2() {
 
 	result, err := PublishMessage(context.TODO(), client, input)
 	if err != nil {
-		fmt.Println("Got an error publishing the message:")
-		fmt.Println(err)
+		log.Logger.Traceln("Got an error publishing the message:")
+		log.Logger.Traceln(err)
 		return
 	}
 
-	fmt.Println("Message ID: " + *result.MessageId)
+	log.Logger.Traceln("Message ID: " + *result.MessageId)
 }

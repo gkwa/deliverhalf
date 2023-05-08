@@ -57,14 +57,14 @@ func reloadConfig() {
 	// Read the default configuration file
 	err := viper.ReadInConfig()
 	if err != nil {
-		fmt.Printf("Error reading config file: %s", err)
+		log.Logger.Tracef("Error reading config file: %s", err)
 		return
 	}
 
 	// Reload the default configuration file
 	err = viper.ReadInConfig()
 	if err != nil {
-		fmt.Printf("Error reading config file: %s", err)
+		log.Logger.Tracef("Error reading config file: %s", err)
 		return
 	}
 }

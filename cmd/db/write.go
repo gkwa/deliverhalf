@@ -31,7 +31,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Println("config called")
 
-		fmt.Println("write called")
+		log.Logger.Traceln("write called")
 		// test(logger)
 		Test2()
 	},

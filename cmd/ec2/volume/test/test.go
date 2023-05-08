@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 	"github.com/k0kubun/pp"
@@ -98,7 +97,7 @@ func test1() {
 	var extVol volume.ExtendedEc2Volume
 	myvol2 := make(map[string]interface{})
 	db.Last(&extVol)
-	fmt.Print(extVol.JsonDef)
+	log.Logger.Trace(extVol.JsonDef)
 	err = json.Unmarshal([]byte(extVol.JsonDef), &myvol2)
 	if err != nil {
 		log.Logger.Fatalf("tried to unmarshal '%s' to a %T but got error %s",

@@ -4,11 +4,10 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	db "github.com/taylormonacelli/deliverhalf/cmd/db"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	sns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
 
@@ -56,9 +55,9 @@ func run() {
 	db.Test2()
 
 	// do other work here while listenForSnsMessages runs in the background
-	fmt.Println("Doing other work...")
+	log.Logger.Traceln("Doing other work...")
 
 	// wait for the listenForSnsMessages to complete and print the result
 	result := <-c
-	fmt.Println(result)
+	log.Logger.Traceln(result)
 }
