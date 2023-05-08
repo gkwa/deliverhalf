@@ -119,7 +119,7 @@ func create() {
 			sgIndex, viper.ConfigFileUsed())
 	}
 
-	log.Logger.Trace("security groups: %s", strings.Join(securityGroupIDs, ", "))
+	log.Logger.Tracef("security groups: %s", strings.Join(securityGroupIDs, ", "))
 
 	script, err := createUserData()
 	if err != nil {

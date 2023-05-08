@@ -93,7 +93,7 @@ func GetIdentityDocFromFile() (imds.ExtendedInstanceIdentityDocument, error) {
 func GetIdentityDocFromStr(str string) (imds.ExtendedInstanceIdentityDocument, error) {
 	// Check if the JSON string is valid
 	if json.Valid([]byte(str)) {
-		log.Logger.Trace("PASS: checking that json string is valid: %s", str)
+		log.Logger.Tracef("PASS: checking that json string is valid: %s", str)
 	} else {
 		log.Logger.Fatalf("JSON string is invalid: %s", str)
 	}

@@ -119,7 +119,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 			log.Logger.Tracef("Received message body: %s\n", *message.Body)
 			jsonStr, err := json.Marshal(message)
 			if err != nil {
-				log.Logger.Fatalf("failed to marshal message, error: %s")
+				log.Logger.Fatalf("failed to marshal message, error: %s", err)
 			}
 			mydb.WriteToDb(db, string(jsonStr))
 
