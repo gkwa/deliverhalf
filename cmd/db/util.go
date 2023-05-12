@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/glebarez/sqlite"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	"gorm.io/gorm"
 )
 
@@ -72,4 +75,35 @@ func OpenDB1(dbFilePath string) (*gorm.DB, error) {
 	}()
 
 	return db, nil
+}
+
+func Maintenance() {
+	// open a SQLite database
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	if err != nil {
+		log.Logger.Fatalf("can't connect to db: %s", err)
+	}
+	log.Logger.Debugf("cleaning db")
+
+	// get a list of all tables in the database
+	var tables []string
+	result := db.Raw("SELECT name FROM sqlite_master WHERE type='table'").Scan(&tables)
+	if result.Error != nil {
+		log.Logger.Fatalf("error selecting from sqlite_master: %s", err)
+	}
+
+	// loop over each table
+	for _, table := range tables {
+		// determine the cutoff date for records to delete
+		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+
+		// delete records older than the cutoff date
+		result := db.Table(table).Where("created_at < ?", sixMonthsAgo).Delete(nil)
+		if result.Error != nil {
+			log.Logger.Warnf("could not delete records from table: %s", table)
+		}
+
+		// print out the number of deleted records for this table
+		log.Logger.Tracef("Deleted %d records from table %s", result.RowsAffected, table)
+	}
 }

@@ -50,8 +50,10 @@ func listenForSnsMessages(c chan<- string) {
 
 func run() {
 	c := make(chan string)
+	d := make(chan string)
 
 	go listenForSnsMessages(c)
+	go maintainDb(d)
 	db.Test2()
 
 	// do other work here while listenForSnsMessages runs in the background
@@ -60,4 +62,7 @@ func run() {
 	// wait for the listenForSnsMessages to complete and print the result
 	result := <-c
 	log.Logger.Traceln(result)
+
+	result2 := <-d
+	log.Logger.Traceln(result2)
 }

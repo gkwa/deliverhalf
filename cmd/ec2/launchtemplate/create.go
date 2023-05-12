@@ -6,6 +6,7 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -61,8 +62,41 @@ func getConfig() (map[string]interface{}, error) {
 	return viper.AllSettings(), nil
 }
 
+func genRanName(prefix string) string {
+	source := rand.NewSource(time.Now().UnixNano())
+	rng := rand.New(source)
+	randomNumber := rng.Intn(1000000)
+	ltName := fmt.Sprintf("%s-%06d", prefix, randomNumber)
+	return ltName
+}
+
+func getLtFromName(name string) (map[string]interface{}, error) {
+	// Call getConfig() to retrieve the config data
+	config, err := getConfig()
+	if err != nil {
+		log.Logger.Fatal(err)
+	}
+
+	lt, ok := config["launch_templates"].(map[string]interface{})[name].(map[string]interface{})
+	if !ok {
+		msg := fmt.Sprintf("could not index %s.%s from %s",
+			"launch_templates", name, viper.ConfigFileUsed())
+		return nil, errors.New(msg)
+	}
+	return lt, nil
+}
+
 func create() {
-	cfg, err := config.LoadDefaultConfig(context.Background())
+	ltNameFromConfig := "test1"
+	lt, err := getLtFromName(ltNameFromConfig)
+	if err != nil {
+		log.Logger.Fatalf("lookup template from '%s' failed", ltNameFromConfig)
+	}
+
+	region := lt["region"].(string)
+	ltName := genRanName("deliverhalf")
+
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
 		log.Logger.Fatal("failed to load SDK configuration, " + err.Error())
 	}
@@ -70,38 +104,10 @@ func create() {
 	// Create a new EC2 client
 	ec2Client := ec2.NewFromConfig(cfg)
 
-	// Call getConfig() to retrieve the config data
-	config, err := getConfig()
-	if err != nil {
-		log.Logger.Fatal(err)
-	}
-
 	// Get the value from Viper and convert it to the custom type
 	var instanceType types.InstanceType
 
-	// Create a new source with a specific seed
-	source := rand.NewSource(time.Now().UnixNano())
-
-	// Create a new random number generator using the source
-	rng := rand.New(source)
-
-	tplNamePrefix := "deliverhalf"
-
-	ltNameFromConfig := "test1"
-	// Generate a random number between 0 and 999999
-	randomNumber := rng.Intn(1000000)
-
-	// Create a string with the random number appended
-	ltName := fmt.Sprintf("%s-%s-%06d", tplNamePrefix, ltNameFromConfig, randomNumber)
-
 	configIndex := fmt.Sprintf("%s.%s", "launch_templates", ltNameFromConfig)
-
-	lt, ok := config["launch_templates"].(map[string]interface{})[ltNameFromConfig].(map[string]interface{})
-	if !ok {
-		log.Logger.Fatalf("could not index %s",
-			fmt.Sprintf("%s.%s from %s", "launch_templates", ltNameFromConfig, viper.ConfigFileUsed()))
-	}
-
 	err = viper.UnmarshalKey(lt["instancetype"].(string), &instanceType)
 	if err != nil {
 		log.Logger.Fatalf("failed to unmarshal template %s", ltNameFromConfig)
@@ -112,7 +118,10 @@ func create() {
 	keyName := "my-key-pair"
 
 	sgIndex := fmt.Sprintf("%s.securitygroupids", configIndex)
+	iamInstanceProfileIndex := fmt.Sprintf("%s.iaminstanceprofile", configIndex)
+	log.Logger.Tracef("instance profile: %s", iamInstanceProfileIndex)
 
+	instanceProfileName := viper.GetString(iamInstanceProfileIndex)
 	securityGroupIDs := viper.GetStringSlice(sgIndex)
 	if len(securityGroupIDs) == 0 {
 		log.Logger.Warnf("no security groups matched %s from %s, using new security group",
@@ -131,11 +140,15 @@ func create() {
 	createLaunchTemplateInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: &types.RequestLaunchTemplateData{
-			ImageId:          &imageID,
-			InstanceType:     instanceType,
-			KeyName:          &keyName,
-			SecurityGroupIds: securityGroupIDs,
-			UserData:         &userDataEncoded,
+			ImageId:            &imageID,
+			InstanceType:       instanceType,
+			KeyName:            &keyName,
+			SecurityGroupIds:   securityGroupIDs,
+			UserData:           &userDataEncoded,
+			IamInstanceProfile: &types.LaunchTemplateIamInstanceProfileSpecificationRequest{Name: &instanceProfileName},
+			InstanceMarketOptions: &types.LaunchTemplateInstanceMarketOptionsRequest{
+				MarketType: "spot",
+			},
 		},
 	}
 

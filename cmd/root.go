@@ -45,7 +45,8 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.deliverhalf.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "",
+		"config file (default is $HOME/.deliverhalf.yaml)")
 	RootCmd.PersistentFlags().String("log-level",
 		"info", "Log level (trace, debug, info, warn, error, fatal, panic)",
 	)
