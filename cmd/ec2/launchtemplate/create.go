@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -17,7 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -149,15 +147,13 @@ func create() {
 	createLaunchTemplateInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: &types.RequestLaunchTemplateData{
-			ImageId:            &imageID,
-			InstanceType:       instanceType,
-			KeyName:            &keyName,
-			SecurityGroupIds:   securityGroupIDs,
-			UserData:           &userDataEncoded,
-			IamInstanceProfile: &types.LaunchTemplateIamInstanceProfileSpecificationRequest{Name: &instanceProfileName},
-			InstanceMarketOptions: &types.LaunchTemplateInstanceMarketOptionsRequest{
-				MarketType: "spot",
-			},
+			ImageId:               &imageID,
+			InstanceType:          instanceType,
+			KeyName:               &keyName,
+			SecurityGroupIds:      securityGroupIDs,
+			UserData:              &userDataEncoded,
+			IamInstanceProfile:    &types.LaunchTemplateIamInstanceProfileSpecificationRequest{Name: &instanceProfileName},
+			InstanceMarketOptions: &types.LaunchTemplateInstanceMarketOptionsRequest{MarketType: "spot"},
 		},
 	}
 
@@ -215,7 +211,7 @@ func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutp
 
 func createLaunchTemplateFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
 	// Read the JSON file into a byte slice
-	fileContents, err := ioutil.ReadFile(path)
+	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		log.Logger.Warnf("could not read path %s", path)
 		return &ec2.GetLaunchTemplateDataOutput{}, err
@@ -233,7 +229,7 @@ func createLaunchTemplateFromFile(path string) (*ec2.GetLaunchTemplateDataOutput
 }
 
 func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Logger.Fatal(err)
 	}
@@ -253,7 +249,7 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 }
 
 func testCreate3() {
-	ltPath := "data/lt-i-0addae2ca3623ffd3.json"
+	ltPath := "data/lt-i-09d8951608d66bcf4.json"
 	myI, err := createLaunchTemplateFromFile(ltPath)
 	if err != nil {
 		log.Logger.Fatalf("failed to create launch tempalte from file %s", ltPath)
@@ -309,23 +305,75 @@ func testCreate3() {
 	svc := ec2.NewFromConfig(cfg)
 	ltName := genRandName("deliverhalf")
 
-	// Create a new RequestLaunchTemplateData object based on the retrieved launch template data
-	requestData := &types.RequestLaunchTemplateData{
-		ImageId:            myI.LaunchTemplateData.ImageId,
-		InstanceType:       myI.LaunchTemplateData.InstanceType,
-		KeyName:            myI.LaunchTemplateData.KeyName,
-		SecurityGroupIds:   myI.LaunchTemplateData.SecurityGroupIds,
-		UserData:           myI.LaunchTemplateData.UserData,
-		IamInstanceProfile: (*types.LaunchTemplateIamInstanceProfileSpecificationRequest)(myI.LaunchTemplateData.IamInstanceProfile),
-		InstanceMarketOptions: &types.LaunchTemplateInstanceMarketOptionsRequest{
-			MarketType: "spot",
-		},
-		BlockDeviceMappings: bdMappings,
-		TagSpecifications:   tagSpecs,
-		NetworkInterfaces:   niSpecs,
+	// Convert CapacityReservationSpecification from response to request type
+	capacityReservationSpec := &types.LaunchTemplateCapacityReservationSpecificationRequest{
+		CapacityReservationPreference: myI.LaunchTemplateData.CapacityReservationSpecification.CapacityReservationPreference,
 	}
 
-	log.Logger.Traceln("RequestLaunchTemplateData object created successfully:", requestData)
+	metadataOptions := &types.LaunchTemplateInstanceMetadataOptionsRequest{
+		HttpEndpoint:            myI.LaunchTemplateData.MetadataOptions.HttpEndpoint,
+		HttpPutResponseHopLimit: myI.LaunchTemplateData.MetadataOptions.HttpPutResponseHopLimit,
+		HttpTokens:              myI.LaunchTemplateData.MetadataOptions.HttpTokens,
+	}
+
+	var elasticGpuSpecs []types.ElasticGpuSpecification
+
+	for _, gpuSpec := range myI.LaunchTemplateData.ElasticGpuSpecifications {
+		elasticGpuSpec := types.ElasticGpuSpecification{
+			Type: gpuSpec.Type,
+			// Assign other fields as needed
+		}
+
+		elasticGpuSpecs = append(elasticGpuSpecs, elasticGpuSpec)
+	}
+
+	instanceRequirements := myI.LaunchTemplateData.InstanceRequirements
+	var instanceRequirementsRequest *types.InstanceRequirementsRequest
+	if instanceRequirements != nil {
+		instanceRequirementsRequest = &types.InstanceRequirementsRequest{
+			// Assign fields from instanceRequirements to instanceRequirementsRequest
+			// Assign other fields as needed
+		}
+	}
+
+	// Create a new RequestLaunchTemplateData object based on the retrieved launch template data
+	requestData := &types.RequestLaunchTemplateData{
+		// DisableApiStop:                    myI.LaunchTemplateData.DisableApiStop,  // not with spot instance
+		// DisableApiTermination:             myI.LaunchTemplateData.DisableApiStop,  // not with spot instance
+		BlockDeviceMappings:               bdMappings,
+		CapacityReservationSpecification:  capacityReservationSpec,
+		CpuOptions:                        (*types.LaunchTemplateCpuOptionsRequest)(myI.LaunchTemplateData.CpuOptions),
+		CreditSpecification:               (*types.CreditSpecificationRequest)(myI.LaunchTemplateData.CreditSpecification),
+		EbsOptimized:                      myI.LaunchTemplateData.EbsOptimized,
+		ElasticGpuSpecifications:          elasticGpuSpecs,
+		EnclaveOptions:                    (*types.LaunchTemplateEnclaveOptionsRequest)(myI.LaunchTemplateData.EnclaveOptions),
+		HibernationOptions:                (*types.LaunchTemplateHibernationOptionsRequest)(myI.LaunchTemplateData.HibernationOptions),
+		IamInstanceProfile:                (*types.LaunchTemplateIamInstanceProfileSpecificationRequest)(myI.LaunchTemplateData.IamInstanceProfile),
+		ImageId:                           myI.LaunchTemplateData.ImageId,
+		InstanceInitiatedShutdownBehavior: myI.LaunchTemplateData.InstanceInitiatedShutdownBehavior,
+		InstanceMarketOptions:             &types.LaunchTemplateInstanceMarketOptionsRequest{MarketType: "spot"},
+		InstanceRequirements:              instanceRequirementsRequest,
+		InstanceType:                      myI.LaunchTemplateData.InstanceType,
+		KernelId:                          myI.LaunchTemplateData.KernelId,
+		KeyName:                           myI.LaunchTemplateData.KeyName,
+		MaintenanceOptions:                (*types.LaunchTemplateInstanceMaintenanceOptionsRequest)(myI.LaunchTemplateData.MaintenanceOptions),
+		MetadataOptions:                   metadataOptions,
+		Monitoring:                        (*types.LaunchTemplatesMonitoringRequest)(myI.LaunchTemplateData.Monitoring),
+		NetworkInterfaces:                 niSpecs,
+		Placement:                         (*types.LaunchTemplatePlacementRequest)(myI.LaunchTemplateData.Placement),
+		PrivateDnsNameOptions:             (*types.LaunchTemplatePrivateDnsNameOptionsRequest)(myI.LaunchTemplateData.PrivateDnsNameOptions),
+		RamDiskId:                         myI.LaunchTemplateData.RamDiskId,
+		SecurityGroupIds:                  myI.LaunchTemplateData.SecurityGroupIds,
+		SecurityGroups:                    myI.LaunchTemplateData.SecurityGroups,
+		TagSpecifications:                 tagSpecs,
+		UserData:                          myI.LaunchTemplateData.UserData,
+	}
+	requestJson, err := json.Marshal(requestData)
+	if err != nil {
+		log.Logger.Warnf("could not marshal requestData: %s", err)
+	}
+
+	log.Logger.Tracef("RequestLaunchTemplateData object created successfully: %s", string(requestJson))
 
 	// Create the launch template
 	createTemplateInput := &ec2.CreateLaunchTemplateInput{
@@ -335,51 +383,13 @@ func testCreate3() {
 
 	createTemplateOutput, err := svc.CreateLaunchTemplate(context.Background(), createTemplateInput)
 	if err != nil {
-		log.Logger.Traceln("failed to create launch template:", err)
+		log.Logger.Warnf("failed to create launch template: %s", err)
 		return
 	}
 
-	log.Logger.Traceln("Launch template created successfully:", createTemplateOutput)
-}
-
-func createBlockDeviceMappings(bdms []types.LaunchTemplateBlockDeviceMapping) []types.LaunchTemplateBlockDeviceMappingRequest {
-	requestBdms := make([]types.LaunchTemplateBlockDeviceMappingRequest, len(bdms))
-	for i, bdm := range bdms {
-		requestBdms[i] = types.LaunchTemplateBlockDeviceMappingRequest{
-			DeviceName: aws.String(*bdm.DeviceName),
-			Ebs: &types.LaunchTemplateEbsBlockDeviceRequest{
-				DeleteOnTermination: bdm.Ebs.DeleteOnTermination,
-				VolumeSize:          bdm.Ebs.VolumeSize,
-				VolumeType:          bdm.Ebs.VolumeType,
-			},
-		}
+	jsBytes, err := json.Marshal(createTemplateOutput)
+	if err != nil {
+		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
 	}
-	return requestBdms
-}
-
-func createIpv6Addresses(addresses []types.InstanceIpv6Address) []types.InstanceIpv6AddressRequest {
-	requestAddresses := make([]types.InstanceIpv6AddressRequest, len(addresses))
-	for i, addr := range addresses {
-		requestAddresses[i] = types.InstanceIpv6AddressRequest{
-			Ipv6Address: addr.Ipv6Address,
-		}
-	}
-	return requestAddresses
-}
-
-func createNetworkInterfaces(nis []types.LaunchTemplateInstanceNetworkInterfaceSpecification) []types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest {
-	requestNis := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(nis))
-	for i, ni := range nis {
-		ipv6Addresses := createIpv6Addresses(ni.Ipv6Addresses)
-		requestNis[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
-			DeviceIndex:              ni.DeviceIndex,
-			AssociatePublicIpAddress: ni.AssociatePublicIpAddress,
-			SubnetId:                 ni.SubnetId,
-			Groups:                   ni.Groups,
-			InterfaceType:            ni.InterfaceType,
-			Ipv6Addresses:            ipv6Addresses,
-			// Add any additional fields as needed
-		}
-	}
-	return requestNis
+	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
 }
