@@ -14,6 +14,7 @@ import (
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume/test"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/sns"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/update"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/watchdog"
 )
 
