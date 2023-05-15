@@ -12,6 +12,7 @@ import (
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume/test"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/logs"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/sns"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/update"
