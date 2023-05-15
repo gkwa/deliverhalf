@@ -6,19 +6,23 @@ package cmd
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -34,7 +38,12 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("create called")
-		create()
+		// create()
+		// createLaunchTemplateFromFile()
+		// getLaunchDataFromAllTemplatesInDirectory()
+		// getLaunchDataFromAllTemplates()
+		// testCreate1()
+		testCreate3()
 	},
 }
 
@@ -62,7 +71,7 @@ func getConfig() (map[string]interface{}, error) {
 	return viper.AllSettings(), nil
 }
 
-func genRanName(prefix string) string {
+func genRandName(prefix string) string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
 	randomNumber := rng.Intn(1000000)
@@ -94,7 +103,7 @@ func create() {
 	}
 
 	region := lt["region"].(string)
-	ltName := genRanName("deliverhalf")
+	ltName := genRandName("deliverhalf")
 
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
 	if err != nil {
@@ -158,4 +167,219 @@ func create() {
 	}
 
 	log.Logger.Trace("Launch template created with ID:", *createLaunchTemplateOutput.LaunchTemplate.LaunchTemplateId)
+}
+
+func getLaunchDataFromAllTemplates() {
+	launchTemplates, err := getLaunchDataFromAllTemplatesInDirectory()
+	if err != nil {
+		log.Logger.Fatalln("failed to get all launch templates")
+	}
+
+	for _, lt := range launchTemplates {
+		if lt.LaunchTemplateData.UserData == nil {
+			log.Logger.Tracef("launch template doesn't have userdata: %s", *lt.LaunchTemplateData.ImageId)
+		} else {
+			decoded, err := base64.StdEncoding.DecodeString(*lt.LaunchTemplateData.UserData)
+			if err != nil {
+				log.Logger.Fatalf("Failed to decode base64 string")
+			}
+			log.Logger.Tracef("instance %s launch template user data: %s",
+				*lt.LaunchTemplateData.ImageId, string(decoded))
+		}
+	}
+}
+
+func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutput, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return []ec2.GetLaunchTemplateDataOutput{}, err
+	}
+	dir := filepath.Join(cwd, "data")
+
+	paths, err := getPathsToMarshalledLaunchTemplates(dir)
+	if err != nil {
+		log.Logger.Fatalf("could not get list of launch templates in directory %s", dir)
+	}
+
+	var launchTemplates []ec2.GetLaunchTemplateDataOutput
+	for _, path := range paths {
+		lt, err := createLaunchTemplateFromFile(path)
+		if err != nil {
+			log.Logger.Warnf("could not read path %s", path)
+			return nil, err
+		}
+		launchTemplates = append(launchTemplates, *lt)
+	}
+	return launchTemplates, nil
+}
+
+func createLaunchTemplateFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
+	// Read the JSON file into a byte slice
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Logger.Warnf("could not read path %s", path)
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
+
+	// Unmarshal the JSON into a ResponseLaunchTemplateData struct
+	var ltData *ec2.GetLaunchTemplateDataOutput
+	err = json.Unmarshal(fileContents, &ltData)
+	if err != nil {
+		log.Logger.Warnf("couldn't unmarshal launchtemplate from file %s", path)
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
+
+	return ltData, nil
+}
+
+func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Logger.Fatal(err)
+	}
+
+	var matchingFiles []string
+
+	pattern := regexp.MustCompile(`^lt-i-[a-zA-Z0-9]{,16}\.json$`)
+
+	for _, file := range files {
+		if !file.IsDir() && pattern.MatchString(file.Name()) {
+			matchingFiles = append(matchingFiles, filepath.Join(dir, file.Name()))
+		}
+	}
+
+	log.Logger.Traceln(matchingFiles)
+	return matchingFiles, nil
+}
+
+func testCreate3() {
+	ltPath := "data/lt-i-0addae2ca3623ffd3.json"
+	myI, err := createLaunchTemplateFromFile(ltPath)
+	if err != nil {
+		log.Logger.Fatalf("failed to create launch tempalte from file %s", ltPath)
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
+	if err != nil {
+		log.Logger.Fatal("failed to load SDK configuration, " + err.Error())
+	}
+
+	// Convert TagSpecifications to LaunchTemplateTagSpecificationRequest
+	tagSpecs := make([]types.LaunchTemplateTagSpecificationRequest, len(myI.LaunchTemplateData.TagSpecifications))
+	for i, ts := range myI.LaunchTemplateData.TagSpecifications {
+		tagSpecs[i] = types.LaunchTemplateTagSpecificationRequest{
+			ResourceType: ts.ResourceType,
+			Tags:         ts.Tags,
+		}
+	}
+
+	// Convert NetworkInterfaces to LaunchTemplateInstanceNetworkInterfaceSpecificationRequest
+	niSpecs := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(myI.LaunchTemplateData.NetworkInterfaces))
+	for i, ni := range myI.LaunchTemplateData.NetworkInterfaces {
+		niSpecs[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
+			AssociatePublicIpAddress:       ni.AssociatePublicIpAddress,
+			DeleteOnTermination:            ni.DeleteOnTermination,
+			Description:                    ni.Description,
+			DeviceIndex:                    ni.DeviceIndex,
+			Groups:                         ni.Groups,
+			InterfaceType:                  ni.InterfaceType,
+			Ipv6AddressCount:               ni.Ipv6AddressCount,
+			NetworkInterfaceId:             ni.NetworkInterfaceId,
+			PrivateIpAddress:               ni.PrivateIpAddress,
+			PrivateIpAddresses:             ni.PrivateIpAddresses,
+			SecondaryPrivateIpAddressCount: ni.SecondaryPrivateIpAddressCount,
+			SubnetId:                       ni.SubnetId,
+			// Ipv6Addresses:                  ni.Ipv6Addresses,
+		}
+	}
+
+	// Convert the block device mappings to the correct type
+	var bdMappings []types.LaunchTemplateBlockDeviceMappingRequest
+	for _, bdMapping := range myI.LaunchTemplateData.BlockDeviceMappings {
+		bdMappings = append(bdMappings, types.LaunchTemplateBlockDeviceMappingRequest{
+			DeviceName: bdMapping.DeviceName,
+			Ebs: &types.LaunchTemplateEbsBlockDeviceRequest{
+				VolumeSize: bdMapping.Ebs.VolumeSize,
+				VolumeType: bdMapping.Ebs.VolumeType,
+			},
+		})
+	}
+
+	// Create a new EC2 client
+	svc := ec2.NewFromConfig(cfg)
+	ltName := genRandName("deliverhalf")
+
+	// Create a new RequestLaunchTemplateData object based on the retrieved launch template data
+	requestData := &types.RequestLaunchTemplateData{
+		ImageId:            myI.LaunchTemplateData.ImageId,
+		InstanceType:       myI.LaunchTemplateData.InstanceType,
+		KeyName:            myI.LaunchTemplateData.KeyName,
+		SecurityGroupIds:   myI.LaunchTemplateData.SecurityGroupIds,
+		UserData:           myI.LaunchTemplateData.UserData,
+		IamInstanceProfile: (*types.LaunchTemplateIamInstanceProfileSpecificationRequest)(myI.LaunchTemplateData.IamInstanceProfile),
+		InstanceMarketOptions: &types.LaunchTemplateInstanceMarketOptionsRequest{
+			MarketType: "spot",
+		},
+		BlockDeviceMappings: bdMappings,
+		TagSpecifications:   tagSpecs,
+		NetworkInterfaces:   niSpecs,
+	}
+
+	log.Logger.Traceln("RequestLaunchTemplateData object created successfully:", requestData)
+
+	// Create the launch template
+	createTemplateInput := &ec2.CreateLaunchTemplateInput{
+		LaunchTemplateName: &ltName,
+		LaunchTemplateData: requestData,
+	}
+
+	createTemplateOutput, err := svc.CreateLaunchTemplate(context.Background(), createTemplateInput)
+	if err != nil {
+		log.Logger.Traceln("failed to create launch template:", err)
+		return
+	}
+
+	log.Logger.Traceln("Launch template created successfully:", createTemplateOutput)
+}
+
+func createBlockDeviceMappings(bdms []types.LaunchTemplateBlockDeviceMapping) []types.LaunchTemplateBlockDeviceMappingRequest {
+	requestBdms := make([]types.LaunchTemplateBlockDeviceMappingRequest, len(bdms))
+	for i, bdm := range bdms {
+		requestBdms[i] = types.LaunchTemplateBlockDeviceMappingRequest{
+			DeviceName: aws.String(*bdm.DeviceName),
+			Ebs: &types.LaunchTemplateEbsBlockDeviceRequest{
+				DeleteOnTermination: bdm.Ebs.DeleteOnTermination,
+				VolumeSize:          bdm.Ebs.VolumeSize,
+				VolumeType:          bdm.Ebs.VolumeType,
+			},
+		}
+	}
+	return requestBdms
+}
+
+func createIpv6Addresses(addresses []types.InstanceIpv6Address) []types.InstanceIpv6AddressRequest {
+	requestAddresses := make([]types.InstanceIpv6AddressRequest, len(addresses))
+	for i, addr := range addresses {
+		requestAddresses[i] = types.InstanceIpv6AddressRequest{
+			Ipv6Address: addr.Ipv6Address,
+		}
+	}
+	return requestAddresses
+}
+
+func createNetworkInterfaces(nis []types.LaunchTemplateInstanceNetworkInterfaceSpecification) []types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest {
+	requestNis := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(nis))
+	for i, ni := range nis {
+		ipv6Addresses := createIpv6Addresses(ni.Ipv6Addresses)
+		requestNis[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
+			DeviceIndex:              ni.DeviceIndex,
+			AssociatePublicIpAddress: ni.AssociatePublicIpAddress,
+			SubnetId:                 ni.SubnetId,
+			Groups:                   ni.Groups,
+			InterfaceType:            ni.InterfaceType,
+			Ipv6Addresses:            ipv6Addresses,
+			// Add any additional fields as needed
+		}
+	}
+	return requestNis
 }
