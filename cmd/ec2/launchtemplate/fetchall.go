@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/k0kubun/pp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -85,7 +85,8 @@ func getLaunchTemplateData(ctx context.Context, client *ec2.Client, instanceID s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get LaunchTemplateData: %w", err)
 	}
-	pp.Print(resp.LaunchTemplateData)
+	str := spew.Sdump(resp.LaunchTemplateData)
+	log.Logger.Trace(str)
 	return resp, nil
 }
 
@@ -283,12 +284,12 @@ func createDirectory(dirName string) {
 	err := os.Mkdir(dirName, 0o755)
 	if err != nil {
 		if os.IsExist(err) {
-			// log.Logger.Tracef("%s directory already exists\n", dirName)
+			// log.Logger.Tracef("%s directory already exists", dirName)
 		} else {
-			log.Logger.Tracef("Error creating %s directory: %s\n", dirName, err)
+			log.Logger.Tracef("Error creating %s directory: %s", dirName, err)
 		}
 	} else {
-		log.Logger.Tracef("%s directory created successfully\n", dirName)
+		log.Logger.Tracef("%s directory created successfully", dirName)
 	}
 }
 
@@ -344,7 +345,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 
 	// Print instance IDs and names
 	for id, name := range instanceMap {
-		log.Logger.Tracef("Instance ID: %s, Instance Name: %s\n", id, name)
+		log.Logger.Tracef("Instance ID: %s, Instance Name: %s", id, name)
 	}
 
 	// fetch templates locally if not i don't have it
@@ -353,7 +354,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 		dir := getBasedirectoryFromPath(ltPath)
 		createDirectory(dir)
 		if fileExists(ltPath) {
-			log.Logger.Tracef("skipping %s because %s exists\n",
+			log.Logger.Tracef("skipping %s because %s exists",
 				name, ltPath)
 			continue
 		}

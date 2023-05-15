@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.33.0
 	github.com/aws/aws-sdk-go-v2/service/sns v1.20.9
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.20.9
+	github.com/davecgh/go-spew v1.1.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/sirupsen/logrus v1.9.0
