@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -27,7 +28,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Traceln("upload called")
-		upload()
+		test()
 	},
 }
 
@@ -71,6 +72,7 @@ func uploadFileToS3(bucketName, key, filePath string) error {
 
 	// Upload the file to S3
 	_, err = client.PutObject(context.TODO(), input)
+
 	if err != nil {
 		log.Logger.Errorf("failed to upload file to S3: %v", err)
 		return err
@@ -79,20 +81,58 @@ func uploadFileToS3(bucketName, key, filePath string) error {
 	return nil
 }
 
-func upload() {
+func createFakeLog(path string) error {
+	// Specify the path to the directory and file
+
+	dir := filepath.Base(filepath.Dir(path))
+	file := filepath.Base(path)
+
+	// Create the directory structure if it doesn't exist
+	err := os.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	// Create the file within the directory
+	filePath := filepath.Join(dir, file)
+	log.Logger.Tracef("creating path %s", filePath)
+	_, err = os.Create(filePath)
+	if err != nil {
+		return err
+	}
+
+	log.Logger.Trace("File created successfully!")
+	return nil
+}
+
+func test() {
 	bucketName := viper.GetString("s3bucket.name")
 	key := "logs/app.log"
 	filePath := "logs/app.log"
+	createFakeLog(filePath)
 
 	log.Logger.Tracef("bucketName: %s, key: %s, filePath: %s",
 		bucketName, key, filePath,
 	)
 
-	err := uploadFileToS3(bucketName, key, filePath)
+	absPath, err := filepath.Abs(filePath)
 	if err != nil {
-		log.Logger.Errorf("Failed to upload file to S3: %s", err)
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	_, err = os.Stat(absPath)
+	if err != nil {
+		log.Logger.Fatalf("file %s doesn't exist", absPath)
+	}
+
+	msg := fmt.Sprintf("uploading %s to s3://%s/%s", absPath, bucketName, key)
+
+	err = uploadFileToS3(bucketName, key, filePath)
+	if err != nil {
+		log.Logger.Errorf("%s failed", msg, err)
 		return
 	}
 
-	log.Logger.Trace("File uploaded successfully!")
+	log.Logger.Trace("%s worked!", msg)
 }

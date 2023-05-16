@@ -12,13 +12,17 @@ else ifeq ($(shell uname),Linux)
     GOOS = linux
     GOARCH = $(shell arch)
     EXEEXT =
-else ifeq ($(shell uname),Windows_NT)
+else ifeq ($(OS),Windows_NT)
     GOOS = windows
     GOARCH = amd64
     EXEEXT = .exe
 endif
 
-TARGET := ./dist/deliverhalf_$(GOOS)_$(GOARCH)_v1/deliverhalf
+APP := deliverhalf$(EXEEXT)
+TARGET := ./dist/deliverhalf_$(GOOS)_$(GOARCH)_v1/$(APP)
+
+$(APP): $(TARGET)
+	cp $< $@
 
 deliverhalf: $(TARGET)
 	cp $< $@

@@ -50,7 +50,6 @@ func setupConfig() {
 }
 
 func addConfigPaths() {
-	viper.AddConfigPath("$HOME")
 	viper.AddConfigPath(".")
 }
 
