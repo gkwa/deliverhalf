@@ -130,9 +130,9 @@ func test() {
 
 	err = uploadFileToS3(bucketName, key, filePath)
 	if err != nil {
-		log.Logger.Errorf("%s failed", msg, err)
+		log.Logger.Errorf("%s failed: %s", msg, err)
 		return
 	}
 
-	log.Logger.Trace("%s worked!", msg)
+	log.Logger.Tracef("%s worked!", msg)
 }
