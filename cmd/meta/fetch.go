@@ -6,7 +6,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -48,15 +48,14 @@ func init() {
 func parseData(data []byte) (map[string]interface{}, error) {
 	var result map[string]interface{}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("Error parsing JSON data: %s", err)
+		return nil, fmt.Errorf("error parsing JSON data: %s", err)
 	}
 	return result, nil
 }
 
-func addEpochTimestamp(data map[string]interface{}) map[string]interface{} {
-	timestamp := time.Now().Unix()
+func addFetchTimestamp(data map[string]interface{}) map[string]interface{} {
 	newData := map[string]interface{}{
-		"epochtime": timestamp,
+		"fetchTimestamp": time.Now(),
 	}
 	for k, v := range newData {
 		data[k] = v
@@ -70,8 +69,7 @@ func mergeData(data []byte) map[string]interface{} {
 		log.Logger.Fatalf("Error parsing JSON data:%s", err)
 	}
 
-	// add epochtime timestamp blob
-	newData := addEpochTimestamp(parsedData)
+	newData := addFetchTimestamp(parsedData)
 	return newData
 }
 
@@ -99,7 +97,7 @@ func fetchData() ([]byte, error) {
 	url := "http://169.254.169.254/latest/dynamic/instance-identity/document"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating HTTP request: %s", err)
+		return nil, fmt.Errorf("error creating HTTP request: %s", err)
 	}
 
 	client := &http.Client{
@@ -108,13 +106,13 @@ func fetchData() ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Error making HTTP request: %s", err)
+		return nil, fmt.Errorf("error making HTTP request: %s", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading response body: %s", err)
+		return nil, fmt.Errorf("error reading response body: %s", err)
 	}
 
 	return body, nil

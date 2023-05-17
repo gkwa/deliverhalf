@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -63,9 +62,11 @@ func writeBase64DataWrapper(data interface{}) error {
 		log.Logger.Println("Error encoding map to JSON:", err)
 	}
 
+	// ...
+
 	base64Str := base64.StdEncoding.EncodeToString(b)
-	if err := ioutil.WriteFile(dataPath, []byte(base64Str), 0o644); err != nil {
-		return fmt.Errorf("Error writing base64-encoded JSON to file: %s", err)
+	if err := os.WriteFile(dataPath, []byte(base64Str), 0o644); err != nil {
+		return fmt.Errorf("error writing base64-encoded JSON to file: %s", err)
 	}
 
 	log.Logger.Printf("Successfully wrote base64-encoded JSON data to file %s", dataPath)
@@ -81,8 +82,8 @@ func getMapAsString(data interface{}) string {
 func writeData(dataPath string, data interface{}) error {
 	jsonStr := getMapAsString(data)
 
-	if err := ioutil.WriteFile(dataPath, []byte(jsonStr), 0o644); err != nil {
-		return fmt.Errorf("Error writing JSON to file: %s", err)
+	if err := os.WriteFile(dataPath, []byte(jsonStr), 0o644); err != nil {
+		return fmt.Errorf("error writing JSON to file: %s", err)
 	}
 
 	log.Logger.Printf("Successfully wrote JSON data to file %s", dataPath)

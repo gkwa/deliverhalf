@@ -56,7 +56,7 @@ func test2() {
             "bp-8f5a09f1"
         ],
         "devpayProductCodes": null,
-        "epochtime": 1682801174,
+        "fetchTimestamp": 1682801174,
         "imageId": "ami-0f4836e0909f7315f",
         "instanceId": "i-0388847dffe58da42",
         "instanceType": "m5a.4xlarge",

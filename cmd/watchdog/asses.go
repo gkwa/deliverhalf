@@ -52,7 +52,7 @@ func asses() {
 	db.AutoMigrate(&mydb.IdentityBlob{})
 
 	// Calculate the time 1 hour ago from now
-	oneHourAgo := time.Now().Add(-time.Hour).Unix()
+	oneHourAgo := time.Now().Add(-time.Hour)
 
 	// Get the number of records in the "my_table" table
 	var count int64
@@ -62,7 +62,7 @@ func asses() {
 
 	// Find all recent records
 	var results []mydb.IdentityBlob
-	db.Where("epochtime >= ?", oneHourAgo).Group("instance_id").Find(&results)
+	db.Where("fetchtimestamp >= ?", oneHourAgo).Group("instance_id").Find(&results)
 	log.Logger.Debugf("Found %d of %d matching", len(results), count)
 
 	for _, value := range results {

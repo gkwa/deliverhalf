@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,7 +17,7 @@ type ExtendedInstanceIdentityDocument struct {
 	AccountId               string
 	Architecture            string
 	AvailabilityZone        string
-	Epochtime               int64
+	FetchTimestamp          time.Time
 	ImageId                 string
 	InstanceId              string
 	InstanceType            string

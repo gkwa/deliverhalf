@@ -19,7 +19,7 @@ import (
 // testCmd represents the test command
 var testCmd = &cobra.Command{
 	Use:   "test1",
-	Short: "test message is fake data and varies only in epochtime",
+	Short: "test message is fake data and varies only in fetchTimestamp",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
@@ -85,7 +85,7 @@ func SendJsonStr(jsonStr string) {
 	msg := []byte(jsonStr)
 	base64Str := base64.StdEncoding.EncodeToString(msg)
 
-	log.Logger.Printf("region: %s", topicRegion)
+	log.Logger.Tracef("region: %s", topicRegion)
 
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(topicRegion))
 	if err != nil {
@@ -101,9 +101,9 @@ func SendJsonStr(jsonStr string) {
 
 	result, err := PublishMessage(context.TODO(), client, input)
 	if err != nil {
-		log.Logger.Printf("Got an error publishing the message: %s", err)
+		log.Logger.Errorf("Got an error publishing the message: %s", err)
 		return
 	}
 
-	log.Logger.Printf("Message ID: %s", *result.MessageId)
+	log.Logger.Tracef("Message ID: %s", *result.MessageId)
 }

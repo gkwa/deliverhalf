@@ -1,8 +1,10 @@
 package logging
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -10,8 +12,16 @@ import (
 )
 
 func NewLogger() (*logrus.Logger, error) {
+	processName, err := getProcessName()
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return &logrus.Logger{}, err
+	}
+
+	logFname := fmt.Sprintf("%s.log", processName)
+
 	logFile := &lumberjack.Logger{
-		Filename:   "deliverhalf.log",
+		Filename:   logFname,
 		MaxSize:    10, // In megabytes
 		MaxBackups: 0,
 		MaxAge:     365, // In days
@@ -65,4 +75,17 @@ func ParseLogLevel(level string) logrus.Level {
 	default:
 		return logrus.TraceLevel
 	}
+}
+
+func getProcessName() (string, error) {
+	fullexecpath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+
+	_, execname := filepath.Split(fullexecpath)
+	ext := filepath.Ext(execname)
+	name := execname[:len(execname)-len(ext)]
+
+	return name, nil
 }

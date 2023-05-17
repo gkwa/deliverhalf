@@ -57,7 +57,7 @@ func GenTestBlob() string {
             "bp-8f5a09f1"
         ],
         "devpayProductCodes": null,
-        "epochtime": %d,
+        "fetchTimestamp": %d,
         "imageId": "ami-0f4836e0909f7315f",
         "instanceId": "i-0388847dffe58da42",
         "instanceType": "m5a.4xlarge",
@@ -70,10 +70,9 @@ func GenTestBlob() string {
         "version": "2022-11-07"
     }`
 
-	// Get the current Unix Epoch time
-	epoch := time.Now().Unix()
+	timestamp := time.Now()
 
-	// Format the JSON string with the epoch time
-	formattedJson := fmt.Sprintf(jsonStr, epoch)
+	// Format the JSON string with the additional timestamp
+	formattedJson := fmt.Sprintf(jsonStr, timestamp)
 	return string(formattedJson)
 }

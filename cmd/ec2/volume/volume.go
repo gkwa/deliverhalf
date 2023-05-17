@@ -95,7 +95,7 @@ func testListVolumes() error {
 		"bp-12345678"
 		],
 		"devpayProductCodes": null,
-		"epochtime": 1736815649,
+		"fetchTimestamp": 1736815649,
 		"imageId": "ami-0987654321",
 		"instanceId": "i-0987654321",
 		"instanceType": "t2.micro",
@@ -117,7 +117,7 @@ func testListVolumes() error {
 			"bp-6ba54002"
 		],
 		"devpayProductCodes": null,
-		"epochtime": 1683470368,
+		"fetchTimestamp": 1683470368,
 		"imageId": "ami-0b6125e77f55f0eff",
 		"instanceId": "i-0488845dadd58da52",
 		"instanceType": "t3a.2xlarge",

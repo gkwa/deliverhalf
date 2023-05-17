@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -47,12 +47,10 @@ func ParseJsonFromFile(path string) map[string]interface{} {
 		log.Logger.Fatalf("Can't find file %s", path)
 	}
 
-	// read the JSON file into a byte slice
-	jsonBlob, err := ioutil.ReadFile(path)
+	jsonBlob, err := os.ReadFile(path)
 	if err != nil {
-		log.Logger.Fatalf("reading json into byte slice failed with error %s", err)
+		log.Logger.Fatalf("Reading JSON into byte slice failed with error: %s", err)
 	}
-
 	// create a map to hold the decoded JSON data
 	data := make(map[string]interface{})
 

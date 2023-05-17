@@ -249,7 +249,7 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 }
 
 func testCreate3() {
-	ltPath := "data/lt-i-09d8951608d66bcf4.json"
+	ltPath := "data/lt-i-0636fb3f5697fa0dc.json"
 	myI, err := createLaunchTemplateFromFile(ltPath)
 	if err != nil {
 		log.Logger.Fatalf("failed to create launch tempalte from file %s", ltPath)

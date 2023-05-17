@@ -24,9 +24,6 @@ TARGET := ./dist/deliverhalf_$(GOOS)_$(GOARCH)_v1/$(APP)
 $(APP): $(TARGET)
 	cp $< $@
 
-deliverhalf: $(TARGET)
-	cp $< $@
-
 $(TARGET): $(SOURCES)
 	gofumpt -w $(SOURCES)
 	goreleaser build --single-target --snapshot --clean
