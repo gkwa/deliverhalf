@@ -62,7 +62,7 @@ func asses() {
 
 	// Find all recent records
 	var results []mydb.IdentityBlob
-	db.Where("fetchtimestamp >= ?", oneHourAgo).Group("instance_id").Find(&results)
+	db.Where("fetch_timestamp >= ?", oneHourAgo).Group("instance_id").Find(&results)
 	log.Logger.Debugf("Found %d of %d matching", len(results), count)
 
 	for _, value := range results {

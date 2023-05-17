@@ -77,17 +77,17 @@ func genRandName(prefix string) string {
 	return ltName
 }
 
-func getLtFromName(name string) (map[string]interface{}, error) {
+func getLaunchTemplateFromName(ltName string) (map[string]interface{}, error) {
 	// Call getConfig() to retrieve the config data
 	config, err := getConfig()
 	if err != nil {
 		log.Logger.Fatal(err)
 	}
 
-	lt, ok := config["launch_templates"].(map[string]interface{})[name].(map[string]interface{})
+	lt, ok := config["launch_templates"].(map[string]interface{})[ltName].(map[string]interface{})
 	if !ok {
 		msg := fmt.Sprintf("could not index %s.%s from %s",
-			"launch_templates", name, viper.ConfigFileUsed())
+			"launch_templates", ltName, viper.ConfigFileUsed())
 		return nil, errors.New(msg)
 	}
 	return lt, nil
@@ -95,7 +95,7 @@ func getLtFromName(name string) (map[string]interface{}, error) {
 
 func create() {
 	ltNameFromConfig := "test1"
-	lt, err := getLtFromName(ltNameFromConfig)
+	lt, err := getLaunchTemplateFromName(ltNameFromConfig)
 	if err != nil {
 		log.Logger.Fatalf("lookup template from '%s' failed", ltNameFromConfig)
 	}

@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ func init() {
 	// fetchCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func fetchTemplateByName() {
+func fetchTemplateByTemplateName() {
 	// Load the AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
 	if err != nil {
@@ -87,7 +87,7 @@ func fetchTemplateByName() {
 	}
 }
 
-func fetchTemplateById() {
+func fetchTemplateByTemplateId() {
 	// Load the AWS SDK configuration
 	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
 	if err != nil {
@@ -196,4 +196,21 @@ func saveAllLaunchTemplatesToFile() error {
 	}
 
 	return nil
+}
+
+func DescribeLaunchTemplate(ec2Client *ec2.Client, launchTemplateID string) (types.LaunchTemplate, error) {
+	input := &ec2.DescribeLaunchTemplatesInput{
+		LaunchTemplateIds: []string{launchTemplateID},
+	}
+
+	output, err := ec2Client.DescribeLaunchTemplates(context.TODO(), input)
+	if err != nil {
+		return types.LaunchTemplate{}, fmt.Errorf("failed to describe LaunchTemplates: %v", err)
+	}
+
+	if len(output.LaunchTemplates) == 0 {
+		return types.LaunchTemplate{}, fmt.Errorf("no LaunchTemplates found with the given ID")
+	}
+
+	return output.LaunchTemplates[0], nil
 }

@@ -129,3 +129,16 @@ func HandleDownloadError(err error) {
 		log.Logger.Errorf("failed to download object from S3: %v", err)
 	}
 }
+
+func CreateDirectory(dirName string) {
+	err := os.Mkdir(dirName, 0o755)
+	if err != nil {
+		if os.IsExist(err) {
+			// log.Logger.Tracef("%s directory already exists", dirName)
+		} else {
+			log.Logger.Tracef("Error creating %s directory: %s", dirName, err)
+		}
+	} else {
+		log.Logger.Tracef("%s directory created successfully", dirName)
+	}
+}
