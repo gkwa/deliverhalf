@@ -1,0 +1,2 @@
+This is a taste of nastiness as I fumble my way thoroug learning go in
+the context of manageing aws ec2 instances.
