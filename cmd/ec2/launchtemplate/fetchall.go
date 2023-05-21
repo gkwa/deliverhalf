@@ -11,11 +11,12 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
+	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -77,12 +78,10 @@ func printLaunchTemplateData(data *types.ResponseLaunchTemplateData) {
 
 // getLaunchTemplateDataFromInstanceId retrieves the LaunchTemplateData for the specified instance ID
 func getLaunchTemplateDataFromInstanceId(ctx context.Context, client *ec2.Client, instanceID string) (*ec2.GetLaunchTemplateDataOutput, error) {
-	input := &ec2.GetLaunchTemplateDataInput{
-		InstanceId: aws.String(instanceID),
-	}
+	input := &ec2.GetLaunchTemplateDataInput{InstanceId: aws.String(instanceID)}
 	resp, err := client.GetLaunchTemplateData(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get LaunchTemplateData: %w", err)
+		return nil, fmt.Errorf("failed to get LaunchTemplateData: %v", err)
 	}
 	str := spew.Sdump(resp.LaunchTemplateData)
 	log.Logger.Trace(str)
@@ -91,6 +90,11 @@ func getLaunchTemplateDataFromInstanceId(ctx context.Context, client *ec2.Client
 
 // writeLaunchTemplateDataToFile writes the LaunchTemplateData to a JSON file with the specified name
 func writeLaunchTemplateDataToFile(data *ec2.GetLaunchTemplateDataOutput, fileName string) error {
+	err := common.EnsureParentDirectoryExists(fileName)
+	if err != nil {
+		log.Logger.Fatalln(err)
+	}
+
 	file, err := os.Create(fileName)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
@@ -131,17 +135,14 @@ func writeRequestResponseToFile(data *types.ResponseLaunchTemplateData, fileName
 }
 
 func getInstanceIdsForRegion(region string) ([]string, error) {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
-		log.Logger.Traceln("failed to load SDK config:", err)
-		return []string{}, err
+		log.Logger.Errorln(err)
 	}
-
-	client := ec2.NewFromConfig(cfg)
 
 	input := &ec2.DescribeInstancesInput{}
 
-	output, err := client.DescribeInstances(context.Background(), input)
+	output, err := svc.DescribeInstances(context.Background(), input)
 	if err != nil {
 		log.Logger.Traceln("failed to describe EC2 instances:", err)
 		return []string{}, err

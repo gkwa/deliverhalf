@@ -32,6 +32,13 @@ type ExtendedInstanceIdentityDocument struct {
 	MarketplaceProductCodes MultiString `gorm:"type:text"` // []string
 }
 
+type IdentityBlob struct {
+	gorm.Model
+	Doc                     ExtendedInstanceIdentityDocument `gorm:"embedded"`
+	B64SNSMessage           string
+	B64SNSMessageCompressed string
+}
+
 func (s *MultiString) Scan(src interface{}) error {
 	str, ok := src.(string)
 	if !ok {

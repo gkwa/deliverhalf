@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/viper"
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	myimds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -91,7 +92,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 	}
 
 	// Print the subscription ARN
-	log.Logger.Debugf("Subscribed to SNS topic with ARN %s\n", *subscribeOutput.SubscriptionArn)
+	log.Logger.Debugf("Subscribed to SNS topic with ARN %s", *subscribeOutput.SubscriptionArn)
 
 	// Create an SQS client
 	sqsClient := sqs.NewFromConfig(cfg)
@@ -102,7 +103,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 	}
 
 	// Auto Migrate
-	db.AutoMigrate(&mydb.IdentityBlob{})
+	db.AutoMigrate(&myimds.IdentityBlob{})
 
 	// Receive messages from the SQS queue
 	for {
@@ -116,7 +117,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 		}
 
 		for _, message := range receiveOutput.Messages {
-			log.Logger.Tracef("Received message body: %s\n", *message.Body)
+			log.Logger.Tracef("Received message body: %s", *message.Body)
 			jsonStr, err := json.Marshal(message)
 			if err != nil {
 				log.Logger.Fatalf("failed to marshal message, error: %s", err)

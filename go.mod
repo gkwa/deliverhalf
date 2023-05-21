@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.20.9
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.20.9
 	github.com/davecgh/go-spew v1.1.1
+	github.com/dustin/go-humanize v1.0.1
 	github.com/glebarez/sqlite v1.8.0
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/sirupsen/logrus v1.9.0
@@ -36,7 +37,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.18.10 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/glebarez/go-sqlite v1.21.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect

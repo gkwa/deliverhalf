@@ -10,10 +10,11 @@ import (
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // fetchCmd represents the fetch command
@@ -27,7 +28,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("fetch called")
+		log.Logger.Trace("fetch called")
 		fetchAllTemplatesInRegion()
 		// fetchTemplateById()
 	},
@@ -48,17 +49,13 @@ func init() {
 }
 
 func fetchTemplateByTemplateName() {
-	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
-	if err != nil {
-		panic("failed to load SDK configuration, " + err.Error())
-	}
-
-	// Create a new Amazon EC2 client
-	svc := ec2.NewFromConfig(cfg)
-
-	// Specify the name of the Launch Template
 	templateName := "taylor-workstation-windows"
+	region := "us-west-2"
+
+	svc, err := myec2.GetEc2Client(region)
+	if err != nil {
+		log.Logger.Errorln(err)
+	}
 
 	// Create the input parameters for the DescribeLaunchTemplates method
 	input := &ec2.DescribeLaunchTemplatesInput{
@@ -88,18 +85,14 @@ func fetchTemplateByTemplateName() {
 }
 
 func fetchTemplateByTemplateId() {
-	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
-	if err != nil {
-		panic("failed to load SDK configuration, " + err.Error())
-	}
-
-	// Create a new Amazon EC2 client
-	svc := ec2.NewFromConfig(cfg)
-
-	// Specify the launch template ID and version number
+	region := "us-west-2"
 	templateID := "lt-0628c39b01b4d281b"
 	versionNumber := "10"
+
+	svc, err := myec2.GetEc2Client(region)
+	if err != nil {
+		log.Logger.Errorln(err)
+	}
 
 	// Create the input parameters for the DescribeLaunchTemplateVersions method
 	input := &ec2.DescribeLaunchTemplateVersionsInput{
@@ -124,14 +117,11 @@ func fetchAllTemplatesInRegion() {
 }
 
 func fetchAllLaunchTemplates() ([]types.LaunchTemplate, error) {
-	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
+	region := "us-west-2"
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load SDK configuration: %v", err)
+		log.Logger.Errorln(err)
 	}
-
-	// Create a new Amazon EC2 client
-	svc := ec2.NewFromConfig(cfg)
 
 	// Create the input parameters for the DescribeLaunchTemplates method
 	input := &ec2.DescribeLaunchTemplatesInput{}

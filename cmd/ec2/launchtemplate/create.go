@@ -16,11 +16,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -41,7 +42,8 @@ to quickly create a Cobra application.`,
 		// getLaunchDataFromAllTemplatesInDirectory()
 		// getLaunchDataFromAllTemplates()
 		// testCreate1()
-		testCreate3()
+		testCreateLaunchTemplateFromFile()
+		// testCreate4()
 	},
 }
 
@@ -78,7 +80,6 @@ func genRandName(prefix string) string {
 }
 
 func getLaunchTemplateFromName(ltName string) (map[string]interface{}, error) {
-	// Call getConfig() to retrieve the config data
 	config, err := getConfig()
 	if err != nil {
 		log.Logger.Fatal(err)
@@ -103,13 +104,10 @@ func create() {
 	region := lt["region"].(string)
 	ltName := genRandName("deliverhalf")
 
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
+	client, err := myec2.GetEc2Client(region)
 	if err != nil {
-		log.Logger.Fatal("failed to load SDK configuration, " + err.Error())
+		log.Logger.Errorln(err)
 	}
-
-	// Create a new EC2 client
-	ec2Client := ec2.NewFromConfig(cfg)
 
 	// Get the value from Viper and convert it to the custom type
 	var instanceType types.InstanceType
@@ -157,7 +155,7 @@ func create() {
 		},
 	}
 
-	createLaunchTemplateOutput, err := ec2Client.CreateLaunchTemplate(context.Background(), createLaunchTemplateInput)
+	createLaunchTemplateOutput, err := client.CreateLaunchTemplate(context.Background(), createLaunchTemplateInput)
 	if err != nil {
 		log.Logger.Fatal("failed to create launch template, " + err.Error())
 	}
@@ -199,7 +197,7 @@ func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutp
 
 	var launchTemplates []ec2.GetLaunchTemplateDataOutput
 	for _, path := range paths {
-		lt, err := createLaunchTemplateFromFile(path)
+		lt, err := getLaunchTemplateDataOutputFromFile(path)
 		if err != nil {
 			log.Logger.Warnf("could not read path %s", path)
 			return nil, err
@@ -209,8 +207,7 @@ func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutp
 	return launchTemplates, nil
 }
 
-func createLaunchTemplateFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
-	// Read the JSON file into a byte slice
+func getLaunchTemplateDataOutputFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
 	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		log.Logger.Warnf("could not read path %s", path)
@@ -248,17 +245,40 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 	return matchingFiles, nil
 }
 
-func testCreate3() {
-	ltPath := "data/lt-i-0636fb3f5697fa0dc.json"
-	myI, err := createLaunchTemplateFromFile(ltPath)
+func testCreateLaunchTemplateFromFile() (*types.LaunchTemplate, error) {
+	getLaunchTemplateDataOutputFile, err := filepath.Abs("data/GetLaunchTemplateDataOutput/lt-i-041eff5437f8782c0.json")
+	if err != nil {
+		log.Logger.Errorln(err)
+		return &types.LaunchTemplate{}, err
+	}
+
+	template, err := CreateLaunchTemplateFromFile(getLaunchTemplateDataOutputFile)
+	if err != nil {
+		return &types.LaunchTemplate{}, err
+	}
+	log.Logger.Debugf("created launch template %s with id %s from file %s",
+		*template.LaunchTemplateName, *template.LaunchTemplateId, getLaunchTemplateDataOutputFile)
+	return template, nil
+}
+
+func CreateLaunchTemplateFromFile(path string) (*types.LaunchTemplate, error) {
+	createLaunchTemplateOutput, err := CreateLaunchTemplateOutputFromFile(path)
+	if err != nil {
+		return &types.LaunchTemplate{}, err
+	}
+
+	return createLaunchTemplateOutput.LaunchTemplate, nil
+}
+
+func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplateOutput, error) {
+	myI, err := getLaunchTemplateDataOutputFromFile(ltPath)
 	if err != nil {
 		log.Logger.Fatalf("failed to create launch tempalte from file %s", ltPath)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
-	if err != nil {
-		log.Logger.Fatal("failed to load SDK configuration, " + err.Error())
-	}
+	pp.Print(myI)
+	pp.Print(myI.LaunchTemplateData)
+	pp.Print(myI.LaunchTemplateData.TagSpecifications)
 
 	// Convert TagSpecifications to LaunchTemplateTagSpecificationRequest
 	tagSpecs := make([]types.LaunchTemplateTagSpecificationRequest, len(myI.LaunchTemplateData.TagSpecifications))
@@ -273,16 +293,16 @@ func testCreate3() {
 	niSpecs := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(myI.LaunchTemplateData.NetworkInterfaces))
 	for i, ni := range myI.LaunchTemplateData.NetworkInterfaces {
 		niSpecs[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
-			AssociatePublicIpAddress:       ni.AssociatePublicIpAddress,
-			DeleteOnTermination:            ni.DeleteOnTermination,
-			Description:                    ni.Description,
-			DeviceIndex:                    ni.DeviceIndex,
-			Groups:                         ni.Groups,
-			InterfaceType:                  ni.InterfaceType,
-			Ipv6AddressCount:               ni.Ipv6AddressCount,
-			NetworkInterfaceId:             ni.NetworkInterfaceId,
-			PrivateIpAddress:               ni.PrivateIpAddress,
-			PrivateIpAddresses:             ni.PrivateIpAddresses,
+			AssociatePublicIpAddress: ni.AssociatePublicIpAddress,
+			DeleteOnTermination:      ni.DeleteOnTermination,
+			Description:              ni.Description,
+			DeviceIndex:              ni.DeviceIndex,
+			Groups:                   ni.Groups,
+			InterfaceType:            ni.InterfaceType,
+			Ipv6AddressCount:         ni.Ipv6AddressCount,
+			NetworkInterfaceId:       ni.NetworkInterfaceId,
+			PrivateIpAddress:         ni.PrivateIpAddress,
+			// PrivateIpAddresses:             ni.PrivateIpAddresses,
 			SecondaryPrivateIpAddressCount: ni.SecondaryPrivateIpAddressCount,
 			SubnetId:                       ni.SubnetId,
 			// Ipv6Addresses:                  ni.Ipv6Addresses,
@@ -301,8 +321,10 @@ func testCreate3() {
 		})
 	}
 
-	// Create a new EC2 client
-	svc := ec2.NewFromConfig(cfg)
+	svc, err := myec2.GetEc2Client("us-west-2")
+	if err != nil {
+		log.Logger.Fatal(err)
+	}
 	ltName := genRandName("deliverhalf")
 
 	// Convert CapacityReservationSpecification from response to request type
@@ -351,22 +373,22 @@ func testCreate3() {
 		IamInstanceProfile:                (*types.LaunchTemplateIamInstanceProfileSpecificationRequest)(myI.LaunchTemplateData.IamInstanceProfile),
 		ImageId:                           myI.LaunchTemplateData.ImageId,
 		InstanceInitiatedShutdownBehavior: myI.LaunchTemplateData.InstanceInitiatedShutdownBehavior,
-		InstanceMarketOptions:             &types.LaunchTemplateInstanceMarketOptionsRequest{MarketType: "spot"},
-		InstanceRequirements:              instanceRequirementsRequest,
-		InstanceType:                      myI.LaunchTemplateData.InstanceType,
-		KernelId:                          myI.LaunchTemplateData.KernelId,
-		KeyName:                           myI.LaunchTemplateData.KeyName,
-		MaintenanceOptions:                (*types.LaunchTemplateInstanceMaintenanceOptionsRequest)(myI.LaunchTemplateData.MaintenanceOptions),
-		MetadataOptions:                   metadataOptions,
-		Monitoring:                        (*types.LaunchTemplatesMonitoringRequest)(myI.LaunchTemplateData.Monitoring),
-		NetworkInterfaces:                 niSpecs,
-		Placement:                         (*types.LaunchTemplatePlacementRequest)(myI.LaunchTemplateData.Placement),
-		PrivateDnsNameOptions:             (*types.LaunchTemplatePrivateDnsNameOptionsRequest)(myI.LaunchTemplateData.PrivateDnsNameOptions),
-		RamDiskId:                         myI.LaunchTemplateData.RamDiskId,
-		SecurityGroupIds:                  myI.LaunchTemplateData.SecurityGroupIds,
-		SecurityGroups:                    myI.LaunchTemplateData.SecurityGroups,
-		TagSpecifications:                 tagSpecs,
-		UserData:                          myI.LaunchTemplateData.UserData,
+		// InstanceMarketOptions:             &types.LaunchTemplateInstanceMarketOptionsRequest{MarketType: "spot"},
+		InstanceRequirements:  instanceRequirementsRequest,
+		InstanceType:          myI.LaunchTemplateData.InstanceType,
+		KernelId:              myI.LaunchTemplateData.KernelId,
+		KeyName:               myI.LaunchTemplateData.KeyName,
+		MaintenanceOptions:    (*types.LaunchTemplateInstanceMaintenanceOptionsRequest)(myI.LaunchTemplateData.MaintenanceOptions),
+		MetadataOptions:       metadataOptions,
+		Monitoring:            (*types.LaunchTemplatesMonitoringRequest)(myI.LaunchTemplateData.Monitoring),
+		NetworkInterfaces:     niSpecs,
+		Placement:             (*types.LaunchTemplatePlacementRequest)(myI.LaunchTemplateData.Placement),
+		PrivateDnsNameOptions: (*types.LaunchTemplatePrivateDnsNameOptionsRequest)(myI.LaunchTemplateData.PrivateDnsNameOptions),
+		RamDiskId:             myI.LaunchTemplateData.RamDiskId,
+		SecurityGroupIds:      myI.LaunchTemplateData.SecurityGroupIds,
+		SecurityGroups:        myI.LaunchTemplateData.SecurityGroups,
+		TagSpecifications:     tagSpecs,
+		UserData:              myI.LaunchTemplateData.UserData,
 	}
 	requestJson, err := json.Marshal(requestData)
 	if err != nil {
@@ -382,6 +404,47 @@ func testCreate3() {
 	}
 
 	createTemplateOutput, err := svc.CreateLaunchTemplate(context.Background(), createTemplateInput)
+	if err != nil {
+		log.Logger.Warnf("failed to create launch template: %s", err)
+		return &ec2.CreateLaunchTemplateOutput{}, err
+	}
+
+	jsBytes, err := json.MarshalIndent(createTemplateOutput, "", "  ")
+	if err != nil {
+		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
+	}
+	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
+	fmt.Println("Launch template created successfully: " + string(jsBytes))
+	return createTemplateOutput, nil
+}
+
+func testCreate4() {
+	region := "us-west-2"
+	svc, err := myec2.GetEc2Client(region)
+	if err != nil {
+		panic(err)
+	}
+
+	path := "data/i-0476d67631ffc9996-LaunchTemplate.json"
+	path = "/Users/mtm/pdev/taylormonacelli/deliverhalf/data/i-0476d67631ffc9996-LaunchTemplate.json"
+	fileContents, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	var ltData types.RequestLaunchTemplateData
+	err = json.Unmarshal(fileContents, &ltData)
+	if err != nil {
+		panic(err)
+	}
+	pp.Print(ltData.Placement)
+
+	// instanceId := "i-0476d67631ffc9996"
+	myname := "mytest"
+	input1 := ec2.CreateLaunchTemplateInput{
+		LaunchTemplateName: &myname,
+		LaunchTemplateData: &ltData,
+	}
+	createTemplateOutput, err := svc.CreateLaunchTemplate(context.Background(), &input1)
 	if err != nil {
 		log.Logger.Warnf("failed to create launch template: %s", err)
 		return

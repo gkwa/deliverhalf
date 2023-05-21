@@ -4,11 +4,18 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
 	"time"
 
 	// Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
+	myimds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
+	lt "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate"
+	volume "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -49,23 +56,40 @@ func asses() {
 	}
 
 	// Auto Migrate
-	db.AutoMigrate(&mydb.IdentityBlob{})
+	db.AutoMigrate(&myimds.IdentityBlob{})
+	db.AutoMigrate(&lt.ExtendedGetLaunchTemplateDataOutput{})
 
-	// Calculate the time 1 hour ago from now
-	oneHourAgo := time.Now().Add(-time.Hour)
+	since := time.Now().Add(-time.Hour)
 
-	// Get the number of records in the "my_table" table
 	var count int64
-	if err := db.Model(&mydb.IdentityBlob{}).Count(&count).Error; err != nil {
+	if err := db.Model(&myimds.IdentityBlob{}).Count(&count).Error; err != nil {
 		log.Logger.Fatalln(err)
 	}
 
-	// Find all recent records
-	var results []mydb.IdentityBlob
-	db.Where("fetch_timestamp >= ?", oneHourAgo).Group("instance_id").Find(&results)
-	log.Logger.Debugf("Found %d of %d matching", len(results), count)
+	var identityDocs []myimds.IdentityBlob
+	query := "fetch_timestamp >= ?"
+	db.Where(query, since).Group("instance_id").Find(&identityDocs)
+	log.Logger.Debugf("found %d matching of %d identity documents", len(identityDocs), count)
 
-	for _, value := range results {
+	for _, value := range identityDocs {
 		log.Logger.Trace(value)
 	}
+	if len(identityDocs) < 1 {
+		log.Logger.Warnln("no identity documents found")
+		return
+	}
+
+	doc := identityDocs[0].Doc
+	instanceId := doc.InstanceId
+	region := doc.Region
+	tmpFname, _ := filepath.Abs(filepath.Join("data", fmt.Sprintf("%s-LaunchTemplate.json", instanceId)))
+	var volumes []types.Volume
+
+	template, err := lt.GenLaunchTemplateFromInstanceId(region, instanceId, tmpFname)
+	if err != nil {
+		log.Logger.Error(err)
+	}
+	blockDevices := template.LaunchTemplateData.BlockDeviceMappings
+	pp.Print(blockDevices)
+	volume.GetVolumesFromInstanceIdentityDoc(doc, &volumes)
 }

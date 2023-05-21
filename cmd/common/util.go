@@ -5,8 +5,10 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
@@ -141,4 +143,13 @@ func CreateDirectory(dirName string) {
 	} else {
 		log.Logger.Tracef("%s directory created successfully", dirName)
 	}
+}
+
+func EnsureParentDirectoryExists(path string) error {
+	dir := filepath.Dir(path)
+	err := os.MkdirAll(dir, 0o755)
+	if err != nil {
+		return fmt.Errorf("failed to create parent directory: %v", err)
+	}
+	return nil
 }

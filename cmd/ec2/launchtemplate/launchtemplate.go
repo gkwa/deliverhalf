@@ -6,17 +6,24 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	cmd "github.com/taylormonacelli/deliverhalf/cmd/ec2"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
@@ -75,28 +82,87 @@ echo {{.}} >>/root/.ssh/authorized_keys
 	return tplOutput.String(), nil
 }
 
-func genLaunchTemplateFromInstanceId(region string, instanceID string, ltFname string) {
-	// Create a new AWS SDK config with default options
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname string) (*ec2.GetLaunchTemplateDataOutput, error) {
+	db, err := mydb.OpenDB("test.db")
 	if err != nil {
-		log.Logger.Traceln("failed to load SDK config:", err)
-		os.Exit(1)
+		log.Logger.Fatalf("failed to connect to database: %v", err)
 	}
 
-	// Create a new EC2 client
-	client := ec2.NewFromConfig(cfg)
+	var count int64
+	if err := db.Model(&ExtendedGetLaunchTemplateDataOutput{}).Count(&count).Error; err != nil {
+		log.Logger.Fatalln(err)
+	}
 
-	// Retrieve the LaunchTemplateData and write it to a file
+	// don't fetch more than 1 per hour
+	since := time.Now().Add(-1 * time.Hour)
+
+	// get most recent template
+	var templates []ExtendedGetLaunchTemplateDataOutput
+	query := "created_at >= ? and instance_id = ?"
+	if err := db.Where(query, since, instanceID).Find(&templates).Error; err != nil {
+		log.Logger.Trace("query matchd no results")
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
+
+	var items []string
+	for _, tpl := range templates {
+		item := fmt.Sprintf("%s created %s (%s)", tpl.InstanceId, tpl.CreatedAt, humanize.Time(tpl.CreatedAt))
+		items = append(items, item)
+	}
+	log.Logger.Tracef("found %d of %d total templates matching for instance %s",
+		count, len(templates), strings.Join(items, ", "))
+
+	// for debug I do want the json file
+
+	// // reduce aws api usage
+	// if len(templates) > 0 {
+	// 	tpl := templates[len(templates)-1]
+	// 	var x1 *ec2.GetLaunchTemplateDataOutput
+	// 	js := tpl.LaunchTemplateDataJsonStr
+	// 	json.Unmarshal([]byte(js), &x1)
+	// 	return x1, nil
+	// }
+
+	client, err := myec2.GetEc2Client(region)
+	if err != nil {
+		log.Logger.Errorln(err)
+	}
+
 	resp, err := getLaunchTemplateDataFromInstanceId(context.Background(), client, instanceID)
 	if err != nil {
-		log.Logger.Traceln("failed to get LaunchTemplateData:", err)
-		os.Exit(1)
+		log.Logger.Errorf("failed to get LaunchTemplateData: %v", err)
 	}
+
 	err = writeLaunchTemplateDataToFile(resp, ltFname)
 	if err != nil {
-		log.Logger.Traceln("failed to write LaunchTemplateData to file:", err)
-		os.Exit(1)
+		log.Logger.Errorf("failed to write LaunchTemplateData to file %s: %v", ltFname, err)
+		return nil, err
 	}
+
+	err = writeLaunchTemplateDataForInstanceIdToDB(resp, instanceID)
+	if err != nil {
+		log.Logger.Errorf("failed to write LaunchTemplateData to db: %v", err)
+	}
+
+	return resp, nil
+}
+
+func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOutput, instancdId string) error {
+	jsonData, err := json.Marshal(resp)
+	if err != nil {
+		log.Logger.Errorf("failed to serialize launchtemplatedataoutput for instance %s", instancdId)
+	}
+
+	db, err := mydb.OpenDB("test.db")
+	if err != nil {
+		log.Logger.Errorf("failed to connect to database: %v", err)
+	}
+
+	db.Create(&ExtendedGetLaunchTemplateDataOutput{
+		InstanceId:                instancdId,
+		LaunchTemplateDataJsonStr: string(jsonData),
+	})
+	return err
 }
 
 func getInstanceMap(client *ec2.Client) (map[string]string, error) {
@@ -159,9 +225,10 @@ func genLaunchTemplateFileAbsPath(instancId string) string {
 		log.Logger.Fatalln(err)
 	}
 	subdir := "data"
+	subdir2 := "GetLaunchTemplateDataOutput"
 	fname := "lt-" + instancId + ".json"
 
-	fullPath := filepath.Join(dir, subdir, fname)
+	fullPath := filepath.Join(dir, subdir, subdir2, fname)
 	return fullPath
 }
 
@@ -200,15 +267,10 @@ func getAllAwsRegions() []types.Region {
 }
 
 func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
-	// Create AWS SDK config with default options
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	client, err := myec2.GetEc2Client(region)
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
-
-	// Create EC2 client
-	client := ec2.NewFromConfig(cfg)
-
 	// Get instance ID to name map
 	instanceMap, err := getInstanceMap(client)
 	if err != nil {
@@ -223,6 +285,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 	// fetch templates locally if not i don't have it
 	for id, name := range instanceMap {
 		ltPath := genLaunchTemplateFileAbsPath(id)
+		log.Logger.Tracef("generating file path: %s", ltPath)
 		dir := getBasedirectoryFromPath(ltPath)
 		common.CreateDirectory(dir)
 		if common.FileExists(ltPath) {
@@ -230,6 +293,9 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 				name, ltPath)
 			continue
 		}
-		genLaunchTemplateFromInstanceId(region, id, ltPath)
+		_, err := GenLaunchTemplateFromInstanceId(region, id, ltPath)
+		if err != nil {
+			log.Logger.Fatalln(err)
+		}
 	}
 }

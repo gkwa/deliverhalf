@@ -9,6 +9,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -56,8 +57,16 @@ func init() {
 func CreateConfig(region string) (aws.Config, error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
 	if err != nil {
-		log.Logger.Fatal(err)
-		os.Exit(1)
+		return aws.Config{}, err
 	}
 	return cfg, err
+}
+
+func GetEc2Client(region string) (*ec2.Client, error) {
+	config, err := CreateConfig(region)
+	if err != nil {
+		return nil, err
+	}
+	// Create an EC2 client
+	return ec2.NewFromConfig(config), nil
 }

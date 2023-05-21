@@ -6,10 +6,11 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
@@ -62,26 +63,20 @@ type VolumeTag struct {
 	Size int32
 }
 
-func getVolumesFromInstanceIdentity(doc imds.ExtendedInstanceIdentityDocument, volumes *[]types.Volume) error {
-	region := doc.Region
-	instanceId := doc.InstanceId
-
-	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+func GetVolumesFromInstanceIdentityDoc(doc imds.ExtendedInstanceIdentityDocument, volumes *[]types.Volume) error {
+	svc, err := myec2.GetEc2Client(doc.Region)
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.Error(err)
 	}
 
-	// Create a new EC2 client
-	svc := ec2.NewFromConfig(cfg)
-
-	err = getVolumesForInstance(context.Background(), svc, instanceId, volumes)
+	err = GetVolumesFromInstanceId(context.Background(), svc, doc.InstanceId, volumes)
 	if err != nil {
-		log.Logger.Fatalf("Getting volumes for instance %s failed with error %s", instanceId, err)
+		log.Logger.Errorf("getting volumes for instance %s failed with error %s", doc.InstanceId, err)
+		return err
 	}
 
 	volumeTags := extractVolumeTags(*volumes)
-	printVolumeTags(volumeTags)
+	logVolumeTagsConcatinated(volumeTags)
 	return err
 }
 
@@ -122,6 +117,7 @@ func testListVolumes() error {
 		"instanceId": "i-0488845dadd58da52",
 		"instanceType": "t3a.2xlarge",
 		"kernelId": null,
+		"fetchTimestamp"
 		"marketplaceProductCodes": null,
 		"pendingTime": "2023-04-03T14:05:38Z",
 		"privateIp": "172.31.18.139",
@@ -134,7 +130,7 @@ func testListVolumes() error {
 		log.Logger.Fatalf("cant create %T: %s", doc, err)
 	}
 	var volumes []types.Volume
-	err = getVolumesFromInstanceIdentity(doc, &volumes)
+	err = GetVolumesFromInstanceIdentityDoc(doc, &volumes)
 	if err != nil {
 		log.Logger.Error(err)
 		return err
@@ -145,7 +141,6 @@ func testListVolumes() error {
 	if err != nil {
 		log.Logger.Traceln("Error marshaling struct to JSON:", err)
 	}
-	log.Logger.Trace(string(jsonData))
 	log.Logger.Trace(string(jsonData))
 	return nil
 }
@@ -169,19 +164,28 @@ func extractVolumeTags(volumes []types.Volume) map[string]VolumeTag {
 	return volumeTags
 }
 
-func printVolumeTags(volumeTags map[string]VolumeTag) {
+func logVolumeTagsConcatinated(volumeTags map[string]VolumeTag) {
 	for volumeID, volumeTag := range volumeTags {
-		log.Logger.Tracef("Volume ID: %s\n", volumeID)
-		log.Logger.Tracef("Size: %d\n", volumeTag.Size)
-		log.Logger.Tracef("Tags:\n")
-		for _, tag := range volumeTag.Tags {
-			log.Logger.Tracef("  - %s: %s\n", *tag.Key, *tag.Value)
-		}
-		log.Logger.Traceln()
+		tagsStr := formatVolumeTags(volumeTags)
+		log.Logger.Tracef("Volume ID: %s, Size: %d, Tags: [%s]",
+			volumeID, volumeTag.Size, tagsStr)
 	}
 }
 
-func getVolumesForInstance(ctx context.Context, svc *ec2.Client, instanceID string, volumes *[]types.Volume) error {
+func formatVolumeTags(volumeTags map[string]VolumeTag) string {
+	var formattedTags []string
+
+	for _, volumeTag := range volumeTags {
+		for _, tag := range volumeTag.Tags {
+			formattedTag := fmt.Sprintf("%s: %s", *tag.Key, *tag.Value)
+			formattedTags = append(formattedTags, formattedTag)
+		}
+	}
+
+	return strings.Join(formattedTags, ", ")
+}
+
+func GetVolumesFromInstanceId(ctx context.Context, svc *ec2.Client, instanceID string, volumes *[]types.Volume) error {
 	input := &ec2.DescribeVolumesInput{
 		Filters: []types.Filter{
 			{

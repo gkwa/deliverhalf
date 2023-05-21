@@ -91,8 +91,8 @@ func SetDefaultValues() {
 	})
 	viper.SetDefault("SQS", map[string]string{
 		"region":    "us-west-2",
-		"queue-arn": "arn:aws:sqs:us-west-2:193048895737",
-		"queue-url": "https://sqs.us-west-2.amazonaws.com/193048895737/somename",
+		"queue-arn": "arn:aws:sqs:us-west-2:123456789012",
+		"queue-url": "https://sqs.us-west-2.amazonaws.com/123456789012/somename",
 	})
 	configFname := filepath.Base(viper.ConfigFileUsed())
 	viper.SetDefault("S3BUCKET", map[string]string{

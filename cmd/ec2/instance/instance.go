@@ -4,13 +4,14 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	cmd "github.com/taylormonacelli/deliverhalf/cmd/ec2"
-	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
-// instanceCmd represents the instance command
-var instanceCmd = &cobra.Command{
+// InstanceCmd represents the instance command
+var InstanceCmd = &cobra.Command{
 	Use:   "instance",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -20,12 +21,20 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Logger.Traceln("instance called")
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
+		}
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Help()
+		os.Exit(1)
+		return nil
 	},
 }
 
 func init() {
-	cmd.Ec2Cmd.AddCommand(instanceCmd)
+	cmd.Ec2Cmd.AddCommand(InstanceCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -36,7 +45,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// instanceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
-
-func describeInstance() {
 }
