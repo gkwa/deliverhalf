@@ -27,7 +27,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Println("create called")
-		test()
+		testCreateEc2InstanceFromLaunchTemplate()
 	},
 }
 
@@ -45,9 +45,9 @@ func init() {
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func test() {
+func testCreateEc2InstanceFromLaunchTemplate() {
 	region := "us-west-2"
-	launchTemplateDataFile := "data/GetLaunchTemplateDataOutput/lt-i-041eff5437f8782c0.json"
+	launchTemplateDataFile := "data/GetLaunchTemplateDataOutput/lt-i-0c47cd895db8040c7.json"
 	template, err := lt.CreateLaunchTemplateFromFile(launchTemplateDataFile)
 	if err != nil {
 		log.Logger.Errorln(err)
@@ -64,11 +64,8 @@ func createEc2InstanceFromLaunchTemplate(region string, templateID string, launc
 		log.Logger.Errorln(err)
 	}
 
-	var minCount int32
-	var maxCount int32
-
-	minCount = 1
-	maxCount = 1
+	minCount := int32(1)
+	maxCount := int32(1)
 
 	// Specify the launch template ID and set the desired count to 1
 	runInstancesInput := &ec2.RunInstancesInput{

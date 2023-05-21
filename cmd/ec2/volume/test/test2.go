@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/spf13/cobra"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	volume "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -47,18 +47,12 @@ func init() {
 
 func test2() {
 	region := "us-west-2"
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion(region))
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
-		log.Logger.Fatal("failed to load SDK configuration, " + err.Error())
+		log.Logger.Fatal(err)
 	}
 
-	if err != nil {
-		panic(err)
-	}
-
-	svc := ec2.NewFromConfig(cfg)
-
-	instanceID := "i-0e602b7a3b4c5299b" // Replace with the desired instance ID
+	instanceID := "i-0e602b7a3b4c5299b"
 
 	input := &ec2.DescribeInstancesInput{
 		InstanceIds: []string{instanceID},
@@ -66,7 +60,7 @@ func test2() {
 
 	resp, err := svc.DescribeInstances(context.TODO(), input)
 	if err != nil {
-		panic(err)
+		log.Logger.Fatal(err)
 	}
 
 	// Marshal the response to indented JSON

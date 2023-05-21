@@ -73,11 +73,12 @@ func genSnapTags() []types.Tag {
 }
 
 func createVolumeSnapshot() (string, error) {
-	volumeID := "vol-08f2578d51865489b"
+	volumeID := "vol-0dd3bbb75ac0b5b8e"
 	region := "us-west-2"
 
 	snapshotID, err := snapAndTagVolume(volumeID, region)
 	if err != nil {
+		log.Logger.Error(err)
 		return "", err
 	}
 
@@ -105,28 +106,28 @@ func snapAndTagVolume(volumeID string, region string) (string, error) {
 }
 
 func snapVolume(volumeID string, region string, snapshotDesc string) (string, error) {
-	cfg, err := myec2.CreateConfig(region)
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
-		log.Logger.Fatalf("Could not create config %s", err)
+		log.Logger.Error(err)
+		return "", err
 	}
-
-	ec2svc := ec2.NewFromConfig(cfg)
 
 	input := &ec2.CreateSnapshotInput{
 		VolumeId:    aws.String(volumeID),
 		Description: aws.String(snapshotDesc),
 	}
 
-	resp, err := ec2svc.CreateSnapshot(context.Background(), &ec2.CreateSnapshotInput{
+	resp, err := svc.CreateSnapshot(context.Background(), &ec2.CreateSnapshotInput{
 		VolumeId: aws.String(volumeID),
 	})
 	if err != nil {
 		log.Logger.Fatalf("tried to create snapshot for volumeID %s, but got error %s",
 			*input.VolumeId, err)
+		return "", err
 	}
 
 	snapshotID := *resp.SnapshotId
-	return snapshotID, err
+	return snapshotID, nil
 }
 
 func queryRegionForSnapshotsWithTag(region string) {

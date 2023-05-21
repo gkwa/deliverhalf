@@ -65,20 +65,24 @@ func test() {
 	amiName := fmt.Sprintf("my-image-%08d", time.Now().Unix())
 	ami := AMI{
 		Name:       amiName,
-		SnapshotID: "snap-081fa6c4cec7f21f7",
+		SnapshotID: "snap-0b4a8799b77332142",
 		Region:     "us-west-2",
 	}
-	createAMIFromSnapshot(&ami)
+	err := createAMIFromSnapshot(&ami)
+	if err != nil {
+		log.Logger.Error(err)
+		panic(err)
+	}
+
 	log.Logger.Printf("Created AMI with properties %s", ami)
 }
 
 func createAMIFromSnapshot(ami *AMI) error {
-	cfg, err := myec2.CreateConfig(ami.Region)
+	svc, err := myec2.GetEc2Client(ami.Region)
 	if err != nil {
-		log.Logger.Fatal(fmt.Errorf("error trying to create ami from snapshot id %s: %s", ami.SnapshotID, err))
+		log.Logger.Error(err)
+		return err
 	}
-
-	ec2svc := ec2.NewFromConfig(cfg)
 
 	// Call the RegisterImage function to register the AMI image
 	input := &ec2.RegisterImageInput{
@@ -98,7 +102,7 @@ func createAMIFromSnapshot(ami *AMI) error {
 		RootDeviceName: aws.String("/dev/sda1"),
 	}
 
-	result, err := ec2svc.RegisterImage(context.Background(), input)
+	result, err := svc.RegisterImage(context.Background(), input)
 	if err != nil {
 		log.Logger.Fatalf("Error registering new AMI with snapshotID %s: %s", ami.SnapshotID, err)
 	}

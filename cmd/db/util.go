@@ -95,10 +95,10 @@ func Maintenance() {
 	// loop over each table
 	for _, table := range tables {
 		// determine the cutoff date for records to delete
-		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+		since := time.Now().AddDate(0, -6, 0)
 
 		// delete records older than the cutoff date
-		result := db.Table(table).Where("created_at < ?", sixMonthsAgo).Delete(nil)
+		result := db.Table(table).Where("created_at < ?", since).Delete(nil)
 		if result.Error != nil {
 			log.Logger.Warnf("could not delete records from table: %s", table)
 		}

@@ -187,7 +187,7 @@ type Instance struct {
 
 func extractAllEc2InstanceLaunchTemplates() {
 	// Get a list of all AWS regions
-	regions := getAllAwsRegions()
+	regions := myec2.GetAllAwsRegions()
 
 	// Create a buffered channel to limit the number of simultaneous goroutines
 	ch := make(chan types.Region, 6)

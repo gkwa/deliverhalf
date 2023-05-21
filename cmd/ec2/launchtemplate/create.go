@@ -246,7 +246,8 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 }
 
 func testCreateLaunchTemplateFromFile() (*types.LaunchTemplate, error) {
-	getLaunchTemplateDataOutputFile, err := filepath.Abs("data/GetLaunchTemplateDataOutput/lt-i-041eff5437f8782c0.json")
+	fname := "data/GetLaunchTemplateDataOutput/lt-i-0a026f9c40b0337ca.json"
+	getLaunchTemplateDataOutputFile, err := filepath.Abs(fname)
 	if err != nil {
 		log.Logger.Errorln(err)
 		return &types.LaunchTemplate{}, err

@@ -14,15 +14,12 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
-	cmd "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -51,7 +48,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	cmd.Ec2Cmd.AddCommand(LaunchtemplateCmd)
+	myec2.Ec2Cmd.AddCommand(LaunchtemplateCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -237,35 +234,6 @@ func getBasedirectoryFromPath(filePath string) string {
 	return baseDir
 }
 
-func getAllAwsRegions() []types.Region {
-	// Load the AWS SDK configuration
-	cfg, err := config.LoadDefaultConfig(context.Background(), config.WithRegion("us-west-2"))
-	if err != nil {
-		log.Logger.Traceln("failed to load AWS SDK config:", err)
-		return []types.Region{}
-	}
-
-	// Create an EC2 client using the loaded config
-	client := ec2.NewFromConfig(cfg)
-
-	// Get a list of all AWS regions
-	resp, err := client.DescribeRegions(context.Background(), nil)
-	if err != nil {
-		log.Logger.Traceln("failed to describe AWS regions:", err)
-		return []types.Region{}
-	}
-
-	// Create an empty slice of types.Region
-	regions := make([]types.Region, 0, len(resp.Regions))
-	regions = append(regions, resp.Regions...)
-
-	// Print the region names
-	for _, region := range regions {
-		log.Logger.Traceln(*region.RegionName)
-	}
-	return regions
-}
-
 func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 	client, err := myec2.GetEc2Client(region)
 	if err != nil {
@@ -285,14 +253,13 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 	// fetch templates locally if not i don't have it
 	for id, name := range instanceMap {
 		ltPath := genLaunchTemplateFileAbsPath(id)
-		log.Logger.Tracef("generating file path: %s", ltPath)
 		dir := getBasedirectoryFromPath(ltPath)
 		common.CreateDirectory(dir)
 		if common.FileExists(ltPath) {
-			log.Logger.Tracef("skipping %s because %s exists",
-				name, ltPath)
+			log.Logger.Tracef("skipping %s because %s exists", name, ltPath)
 			continue
 		}
+		log.Logger.Tracef("generating file path: %s", ltPath)
 		_, err := GenLaunchTemplateFromInstanceId(region, id, ltPath)
 		if err != nil {
 			log.Logger.Fatalln(err)
