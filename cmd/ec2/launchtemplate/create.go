@@ -263,23 +263,19 @@ func testCreateLaunchTemplateFromFile() (*types.LaunchTemplate, error) {
 }
 
 func CreateLaunchTemplateFromFile(path string) (*types.LaunchTemplate, error) {
-	createLaunchTemplateOutput, err := CreateLaunchTemplateOutputFromFile(path)
+	output, err := CreateLaunchTemplateOutputFromFile(path)
 	if err != nil {
 		return &types.LaunchTemplate{}, err
 	}
 
-	return createLaunchTemplateOutput.LaunchTemplate, nil
+	return output.LaunchTemplate, nil
 }
 
 func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplateOutput, error) {
 	myI, err := getLaunchTemplateDataOutputFromFile(ltPath)
 	if err != nil {
-		log.Logger.Fatalf("failed to create launch tempalte from file %s", ltPath)
+		log.Logger.Fatalf("failed to create launch template from file %s", ltPath)
 	}
-
-	pp.Print(myI)
-	pp.Print(myI.LaunchTemplateData)
-	pp.Print(myI.LaunchTemplateData.TagSpecifications)
 
 	// Convert TagSpecifications to LaunchTemplateTagSpecificationRequest
 	tagSpecs := make([]types.LaunchTemplateTagSpecificationRequest, len(myI.LaunchTemplateData.TagSpecifications))
@@ -391,32 +387,34 @@ func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplat
 		TagSpecifications:     tagSpecs,
 		UserData:              myI.LaunchTemplateData.UserData,
 	}
-	requestJson, err := json.Marshal(requestData)
-	if err != nil {
-		log.Logger.Warnf("could not marshal requestData: %s", err)
-	}
-
-	log.Logger.Tracef("RequestLaunchTemplateData object created successfully: %s", string(requestJson))
 
 	// Create the launch template
-	createTemplateInput := &ec2.CreateLaunchTemplateInput{
+	cltInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: requestData,
 	}
 
-	createTemplateOutput, err := svc.CreateLaunchTemplate(context.Background(), createTemplateInput)
+	jsonData, err := json.MarshalIndent(cltInput, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling struct to JSON:", err)
+		return &ec2.CreateLaunchTemplateOutput{}, err
+	}
+
+	log.Logger.WithField("data", string(jsonData)).Info("Log indented JSON") // log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
+
+	ctOutput, err := svc.CreateLaunchTemplate(context.Background(), cltInput)
 	if err != nil {
 		log.Logger.Warnf("failed to create launch template: %s", err)
 		return &ec2.CreateLaunchTemplateOutput{}, err
 	}
 
-	jsBytes, err := json.MarshalIndent(createTemplateOutput, "", "  ")
+	jsBytes, err := json.MarshalIndent(ctOutput, "", "  ")
 	if err != nil {
-		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
+		log.Logger.Warnf("failed to unmarshal template output: %s", err)
 	}
 	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
-	fmt.Println("Launch template created successfully: " + string(jsBytes))
-	return createTemplateOutput, nil
+
+	return ctOutput, nil
 }
 
 func testCreate4() {
