@@ -190,7 +190,7 @@ function fixup(){
     Get-Content C:\Programdata\deliverhalf\deliverhalf.log -Tail 5
 }
 
-function Main() {
+function Install() {
     StopService
     CreateDirectory $targetDirectory
     CreateDirectory $programdataDirectory
@@ -209,5 +209,3 @@ function Main() {
     InstallService
     fixup
 }
-
-Main
