@@ -400,7 +400,7 @@ func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplat
 		return &ec2.CreateLaunchTemplateOutput{}, err
 	}
 
-	log.Logger.WithField("data", string(jsonData)).Info("Log indented JSON") // log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
+	log.Logger.WithField("data", string(jsonData)).Trace("Log indented JSON") // log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
 
 	ctOutput, err := svc.CreateLaunchTemplate(context.Background(), cltInput)
 	if err != nil {
