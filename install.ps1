@@ -1,4 +1,4 @@
-function Uninstall(){
+function UninstallDeliverhalf(){
     $s = Get-Service | Where-Object { $_.Name -eq 'deliverhalf' }
     if ($s -and $s.Status -eq 'Running') {
         Stop-Service deliverhalf -PassThru
@@ -190,7 +190,7 @@ function fixup(){
     Get-Content C:\Programdata\deliverhalf\deliverhalf.log -Tail 5
 }
 
-function Install() {
+function InstallDeliverhalf() {
     StopService
     CreateDirectory $targetDirectory
     CreateDirectory $programdataDirectory
