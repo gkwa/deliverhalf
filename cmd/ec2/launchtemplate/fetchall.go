@@ -30,8 +30,18 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("fetchall called")
-		extractAllEc2InstanceLaunchTemplates()
+		getAllEc2InstanceLaunchTemplates()
 	},
+}
+
+type EC2Instance struct {
+	InstanceId   string
+	InstanceName string
+}
+
+type Instance struct {
+	ID   string
+	Name string
 }
 
 func init() {
@@ -108,6 +118,83 @@ func getLaunchTemplateDataFromInstanceId(ctx context.Context, client *ec2.Client
 	return resp, nil
 }
 
+func getInstanceIdsForRegion(region string) ([]string, error) {
+	svc, err := myec2.GetEc2Client(region)
+	if err != nil {
+		log.Logger.Errorln(err)
+	}
+
+	input := &ec2.DescribeInstancesInput{}
+
+	output, err := svc.DescribeInstances(context.Background(), input)
+	if err != nil {
+		log.Logger.Traceln("failed to describe EC2 instances:", err)
+		return []string{}, err
+	}
+
+	var instanceIDs []string
+
+	for _, reservation := range output.Reservations {
+		for _, instance := range reservation.Instances {
+			instanceIDs = append(instanceIDs, *instance.InstanceId)
+		}
+	}
+
+	jsonData, err := json.MarshalIndent(instanceIDs, "", "  ")
+	if err != nil {
+		log.Logger.Traceln("failed to marshal list to JSON:", err)
+		return []string{}, err
+	}
+
+	log.Logger.Traceln(jsonData)
+	return instanceIDs, err
+}
+
+func getInstanceNameOrExit(ctx context.Context, client *ec2.Client, instanceID string) string {
+	instanceName, err := getInstanceName(ctx, client, instanceID)
+	if err != nil {
+		log.Logger.Traceln("failed to get instance name:", err)
+		os.Exit(1)
+	}
+	return instanceName
+}
+
+func getAllEc2InstanceLaunchTemplates() {
+	// Get a list of all AWS regions
+	regions := myec2.GetAllAwsRegions()
+
+	// Create a buffered channel to limit the number of simultaneous goroutines
+	ch := make(chan types.Region, 6)
+
+	// Create a wait group to wait for all goroutines to finish
+	wg := sync.WaitGroup{}
+
+	// Iterate over the regions and start a goroutine for each one
+	for _, region := range regions {
+		// Add the region to the channel
+		ch <- region
+
+		// Start a new goroutine
+		wg.Add(1)
+		go func(region types.Region) {
+			// Remove the region from the channel when the goroutine completes
+			defer func() {
+				<-ch
+				wg.Done()
+			}()
+
+			// write templates to data/lt-*.json
+			err := genLaunchTemplatesForAllEc2InstancesInregion(*region.RegionName)
+			if err != nil {
+				log.Logger.Fatalln(err)
+			}
+		}(region)
+	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+}
+
 // writeLaunchTemplateDataToFile writes the LaunchTemplateData to a JSON file with the specified name
 func writeLaunchTemplateDataToFile(data *ec2.GetLaunchTemplateDataOutput, fileName string) error {
 	err := common.EnsureParentDirectoryExists(fileName)
@@ -152,91 +239,4 @@ func writeRequestResponseToFile(data *types.ResponseLaunchTemplateData, fileName
 	}
 
 	return nil
-}
-
-func getInstanceIdsForRegion(region string) ([]string, error) {
-	svc, err := myec2.GetEc2Client(region)
-	if err != nil {
-		log.Logger.Errorln(err)
-	}
-
-	input := &ec2.DescribeInstancesInput{}
-
-	output, err := svc.DescribeInstances(context.Background(), input)
-	if err != nil {
-		log.Logger.Traceln("failed to describe EC2 instances:", err)
-		return []string{}, err
-	}
-
-	var instanceIDs []string
-
-	for _, reservation := range output.Reservations {
-		for _, instance := range reservation.Instances {
-			instanceIDs = append(instanceIDs, *instance.InstanceId)
-		}
-	}
-
-	jsonData, err := json.MarshalIndent(instanceIDs, "", "  ")
-	if err != nil {
-		log.Logger.Traceln("failed to marshal list to JSON:", err)
-		return []string{}, err
-	}
-
-	log.Logger.Traceln(jsonData)
-	return instanceIDs, err
-}
-
-func getInstanceNameOrExit(ctx context.Context, client *ec2.Client, instanceID string) string {
-	instanceName, err := getInstanceName(ctx, client, instanceID)
-	if err != nil {
-		log.Logger.Traceln("failed to get instance name:", err)
-		os.Exit(1)
-	}
-	return instanceName
-}
-
-type EC2Instance struct {
-	InstanceId   string
-	InstanceName string
-}
-
-type Instance struct {
-	ID   string
-	Name string
-}
-
-func extractAllEc2InstanceLaunchTemplates() {
-	// Get a list of all AWS regions
-	regions := myec2.GetAllAwsRegions()
-
-	// Create a buffered channel to limit the number of simultaneous goroutines
-	ch := make(chan types.Region, 6)
-
-	// Create a wait group to wait for all goroutines to finish
-	wg := sync.WaitGroup{}
-
-	// Iterate over the regions and start a goroutine for each one
-	for _, region := range regions {
-		// Add the region to the channel
-		ch <- region
-
-		// Start a new goroutine
-		wg.Add(1)
-		go func(region types.Region) {
-			// Remove the region from the channel when the goroutine completes
-			defer func() {
-				<-ch
-				wg.Done()
-			}()
-
-			// write templates to data/lt-*.json
-			err := genLaunchTemplatesForAllEc2InstancesInregion(*region.RegionName)
-			if err != nil {
-				log.Logger.Fatalln(err)
-			}
-		}(region)
-	}
-
-	// Wait for all goroutines to finish
-	wg.Wait()
 }

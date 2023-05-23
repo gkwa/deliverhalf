@@ -210,9 +210,14 @@ func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutp
 }
 
 func getLaunchTemplateDataOutputFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
-	fileContents, err := os.ReadFile(path)
+	absPath, err := filepath.Abs(path)
 	if err != nil {
-		log.Logger.Warnf("could not read path %s", path)
+		log.Logger.Errorln(err)
+	}
+
+	fileContents, err := os.ReadFile(absPath)
+	if err != nil {
+		log.Logger.Warnf("could not read path %s", absPath)
 		return &ec2.GetLaunchTemplateDataOutput{}, err
 	}
 
@@ -267,12 +272,11 @@ func testCreateLaunchTemplateFromFile() error {
 
 	jsonData, err := json.MarshalIndent(cltInput, "", "  ")
 	if err != nil {
-		fmt.Println("Error marshaling struct to JSON:", err)
+		fmt.Println("error marshaling struct to JSON:", err)
 		return err
 	}
 
-	// log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
-	log.Logger.WithField("data", string(jsonData)).Trace("Log indented JSON")
+	log.Logger.WithField("data", string(jsonData)).Trace("log indented JSON")
 
 	return nil
 }
@@ -304,20 +308,22 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 	// Convert NetworkInterfaces to LaunchTemplateInstanceNetworkInterfaceSpecificationRequest
 	niSpecs := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(myI.LaunchTemplateData.NetworkInterfaces))
 	for i, ni := range myI.LaunchTemplateData.NetworkInterfaces {
+		n := len(myI.LaunchTemplateData.NetworkInterfaces[i].Ipv6Addresses)
 		niSpecs[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
-			AssociatePublicIpAddress: ni.AssociatePublicIpAddress,
-			DeleteOnTermination:      ni.DeleteOnTermination,
-			Description:              ni.Description,
-			DeviceIndex:              ni.DeviceIndex,
-			Groups:                   ni.Groups,
-			InterfaceType:            ni.InterfaceType,
-			Ipv6AddressCount:         ni.Ipv6AddressCount,
-			NetworkInterfaceId:       ni.NetworkInterfaceId,
-			PrivateIpAddress:         ni.PrivateIpAddress,
-			// PrivateIpAddresses:             ni.PrivateIpAddresses,
+			AssociatePublicIpAddress:       ni.AssociatePublicIpAddress,
+			DeleteOnTermination:            ni.DeleteOnTermination,
+			Description:                    ni.Description,
+			DeviceIndex:                    ni.DeviceIndex,
+			Groups:                         ni.Groups,
+			InterfaceType:                  ni.InterfaceType,
+			Ipv6AddressCount:               ni.Ipv6AddressCount,
+			Ipv6Addresses:                  make([]types.InstanceIpv6AddressRequest, n),
+			NetworkCardIndex:               ni.DeviceIndex,
+			NetworkInterfaceId:             ni.NetworkInterfaceId,
+			PrivateIpAddress:               ni.PrivateIpAddress,
+			PrivateIpAddresses:             ni.PrivateIpAddresses,
 			SecondaryPrivateIpAddressCount: ni.SecondaryPrivateIpAddressCount,
 			SubnetId:                       ni.SubnetId,
-			// Ipv6Addresses:                  ni.Ipv6Addresses,
 		}
 	}
 
@@ -327,8 +333,11 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 		bdMappings = append(bdMappings, types.LaunchTemplateBlockDeviceMappingRequest{
 			DeviceName: bdMapping.DeviceName,
 			Ebs: &types.LaunchTemplateEbsBlockDeviceRequest{
-				VolumeSize: bdMapping.Ebs.VolumeSize,
-				VolumeType: bdMapping.Ebs.VolumeType,
+				VolumeSize:          bdMapping.Ebs.VolumeSize,
+				VolumeType:          bdMapping.Ebs.VolumeType,
+				DeleteOnTermination: bdMapping.Ebs.DeleteOnTermination,
+				Encrypted:           bdMapping.Ebs.Encrypted,
+				SnapshotId:          bdMapping.Ebs.SnapshotId,
 			},
 		})
 	}
@@ -342,6 +351,8 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 		HttpEndpoint:            myI.LaunchTemplateData.MetadataOptions.HttpEndpoint,
 		HttpPutResponseHopLimit: myI.LaunchTemplateData.MetadataOptions.HttpPutResponseHopLimit,
 		HttpTokens:              myI.LaunchTemplateData.MetadataOptions.HttpTokens,
+		InstanceMetadataTags:    myI.LaunchTemplateData.MetadataOptions.InstanceMetadataTags,
+		HttpProtocolIpv6:        myI.LaunchTemplateData.MetadataOptions.HttpProtocolIpv6,
 	}
 
 	var elasticGpuSpecs []types.ElasticGpuSpecification
@@ -364,14 +375,23 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 		}
 	}
 
+	instanceMarketOptions := &types.LaunchTemplateInstanceMarketOptionsRequest{
+		MarketType: types.MarketTypeSpot,
+	}
+
+	if instanceMarketOptions.MarketType == types.MarketTypeSpot {
+		*myI.LaunchTemplateData.DisableApiStop = false
+		*myI.LaunchTemplateData.DisableApiTermination = false
+	}
+
 	// Create a new RequestLaunchTemplateData object based on the retrieved launch template data
 	requestData := &types.RequestLaunchTemplateData{
-		// DisableApiStop:                    myI.LaunchTemplateData.DisableApiStop,  // not with spot instance
-		// DisableApiTermination:             myI.LaunchTemplateData.DisableApiStop,  // not with spot instance
 		BlockDeviceMappings:               bdMappings,
 		CapacityReservationSpecification:  capacityReservationSpec,
 		CpuOptions:                        (*types.LaunchTemplateCpuOptionsRequest)(myI.LaunchTemplateData.CpuOptions),
 		CreditSpecification:               (*types.CreditSpecificationRequest)(myI.LaunchTemplateData.CreditSpecification),
+		DisableApiStop:                    myI.LaunchTemplateData.DisableApiStop,
+		DisableApiTermination:             myI.LaunchTemplateData.DisableApiTermination,
 		EbsOptimized:                      myI.LaunchTemplateData.EbsOptimized,
 		ElasticGpuSpecifications:          elasticGpuSpecs,
 		EnclaveOptions:                    (*types.LaunchTemplateEnclaveOptionsRequest)(myI.LaunchTemplateData.EnclaveOptions),
@@ -379,22 +399,22 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 		IamInstanceProfile:                (*types.LaunchTemplateIamInstanceProfileSpecificationRequest)(myI.LaunchTemplateData.IamInstanceProfile),
 		ImageId:                           myI.LaunchTemplateData.ImageId,
 		InstanceInitiatedShutdownBehavior: myI.LaunchTemplateData.InstanceInitiatedShutdownBehavior,
-		// InstanceMarketOptions:             &types.LaunchTemplateInstanceMarketOptionsRequest{MarketType: "spot"},
-		InstanceRequirements:  instanceRequirementsRequest,
-		InstanceType:          myI.LaunchTemplateData.InstanceType,
-		KernelId:              myI.LaunchTemplateData.KernelId,
-		KeyName:               myI.LaunchTemplateData.KeyName,
-		MaintenanceOptions:    (*types.LaunchTemplateInstanceMaintenanceOptionsRequest)(myI.LaunchTemplateData.MaintenanceOptions),
-		MetadataOptions:       metadataOptions,
-		Monitoring:            (*types.LaunchTemplatesMonitoringRequest)(myI.LaunchTemplateData.Monitoring),
-		NetworkInterfaces:     niSpecs,
-		Placement:             (*types.LaunchTemplatePlacementRequest)(myI.LaunchTemplateData.Placement),
-		PrivateDnsNameOptions: (*types.LaunchTemplatePrivateDnsNameOptionsRequest)(myI.LaunchTemplateData.PrivateDnsNameOptions),
-		RamDiskId:             myI.LaunchTemplateData.RamDiskId,
-		SecurityGroupIds:      myI.LaunchTemplateData.SecurityGroupIds,
-		SecurityGroups:        myI.LaunchTemplateData.SecurityGroups,
-		TagSpecifications:     tagSpecs,
-		UserData:              myI.LaunchTemplateData.UserData,
+		InstanceMarketOptions:             instanceMarketOptions,
+		InstanceRequirements:              instanceRequirementsRequest,
+		InstanceType:                      myI.LaunchTemplateData.InstanceType,
+		KernelId:                          myI.LaunchTemplateData.KernelId,
+		KeyName:                           myI.LaunchTemplateData.KeyName,
+		MaintenanceOptions:                (*types.LaunchTemplateInstanceMaintenanceOptionsRequest)(myI.LaunchTemplateData.MaintenanceOptions),
+		MetadataOptions:                   metadataOptions,
+		Monitoring:                        (*types.LaunchTemplatesMonitoringRequest)(myI.LaunchTemplateData.Monitoring),
+		NetworkInterfaces:                 niSpecs,
+		Placement:                         (*types.LaunchTemplatePlacementRequest)(myI.LaunchTemplateData.Placement),
+		PrivateDnsNameOptions:             (*types.LaunchTemplatePrivateDnsNameOptionsRequest)(myI.LaunchTemplateData.PrivateDnsNameOptions),
+		RamDiskId:                         myI.LaunchTemplateData.RamDiskId,
+		SecurityGroupIds:                  myI.LaunchTemplateData.SecurityGroupIds,
+		SecurityGroups:                    myI.LaunchTemplateData.SecurityGroups,
+		TagSpecifications:                 tagSpecs,
+		UserData:                          myI.LaunchTemplateData.UserData,
 	}
 
 	// Create the launch template

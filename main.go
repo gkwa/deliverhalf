@@ -10,6 +10,7 @@ import (
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/ami"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/instance"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate/test"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume/test"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/logs"
