@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -118,7 +119,17 @@ func fetchData() ([]byte, error) {
 	return body, nil
 }
 
+func enableMetaDataFetching() {
+	err := os.Unsetenv("AWS_EC2_METADATA_DISABLED")
+	if err != nil {
+		log.Logger.Warn("Error unsetting environment variable:", err)
+		return
+	}
+	log.Logger.Trace("environment variable AWS_EC2_METADATA_DISABLED unset successfully.")
+}
+
 func Fetch() map[string]interface{} {
+	enableMetaDataFetching()
 	body, err := fetchData()
 	if err != nil {
 		log.Logger.Fatalf("Error fetching data: %s", err)

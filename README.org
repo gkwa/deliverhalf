@@ -1,13 +1,15 @@
 * deliverhalf
 ** summary
 
-This is a taste of nastiness as I fumble my way thoroug learning go in
-the context of manageing aws ec2 instances.
+This is a taste of nastiness as I fumble my way thorough learning Go in
+the context of automating an aws ec2 lifecycle workflow.
+
 ** install windows client
 
 #+begin_example
 irm https://raw.githubusercontent.com/taylormonacelli/deliverhalf/master/install.ps1 | iex; InstallDeliverhalf
 #+end_example
+
 ** uninstall windows client
 
 #+begin_example

@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (
@@ -9,7 +7,6 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	// "gorm.io/driver/sqlite" // Sqlite driver based on GGO
 	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 
 	"gorm.io/gorm"

@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (
@@ -74,6 +72,28 @@ func printLaunchTemplateData(data *types.ResponseLaunchTemplateData) {
 		log.Logger.Fatalf("failed to marshal LaunchTemplateData to JSON: %v", err)
 	}
 	log.Logger.Traceln(string(jsonData))
+}
+
+func checkInstanceIdExists(instanceID string, client *ec2.Client) (bool, error) {
+	// Create the DescribeInstancesInput with the instance ID as a filter
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: []string{instanceID},
+	}
+
+	// Call the DescribeInstances API
+	output, err := client.DescribeInstances(context.TODO(), input)
+	if err != nil {
+		return false, fmt.Errorf("error describing instances: %w", err)
+	}
+
+	// Check if any reservations and instances are returned
+	if len(output.Reservations) > 0 && len(output.Reservations[0].Instances) > 0 {
+		// Instance exists
+		return true, nil
+	} else {
+		// Instance does not exist
+		return false, nil
+	}
 }
 
 // getLaunchTemplateDataFromInstanceId retrieves the LaunchTemplateData for the specified instance ID
@@ -210,7 +230,10 @@ func extractAllEc2InstanceLaunchTemplates() {
 			}()
 
 			// write templates to data/lt-*.json
-			genLaunchTemplatesForAllEc2InstancesInregion(*region.RegionName)
+			err := genLaunchTemplatesForAllEc2InstancesInregion(*region.RegionName)
+			if err != nil {
+				log.Logger.Fatalln(err)
+			}
 		}(region)
 	}
 

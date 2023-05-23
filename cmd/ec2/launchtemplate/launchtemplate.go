@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (
@@ -110,7 +108,6 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		count, len(templates), strings.Join(items, ", "))
 
 	// for debug I do want the json file
-
 	// // reduce aws api usage
 	// if len(templates) > 0 {
 	// 	tpl := templates[len(templates)-1]
@@ -125,6 +122,17 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		log.Logger.Errorln(err)
 	}
 
+	// Check if the instance exists
+	exists, err := checkInstanceIdExists(instanceID, client)
+	if err != nil {
+		log.Logger.Warnf("Error: %v", err)
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
+
+	if !exists {
+		log.Logger.Warnf("instance with id %s no longer exists in region %s", instanceID, region)
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
 	resp, err := getLaunchTemplateDataFromInstanceId(context.Background(), client, instanceID)
 	if err != nil {
 		log.Logger.Errorf("failed to get LaunchTemplateData: %v", err)
@@ -163,7 +171,6 @@ func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOut
 }
 
 func getInstanceMap(client *ec2.Client) (map[string]string, error) {
-	// Query EC2 instances
 	input := &ec2.DescribeInstancesInput{}
 	result, err := client.DescribeInstances(context.Background(), input)
 	if err != nil {
@@ -234,7 +241,7 @@ func getBasedirectoryFromPath(filePath string) string {
 	return baseDir
 }
 
-func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
+func genLaunchTemplatesForAllEc2InstancesInregion(region string) error {
 	client, err := myec2.GetEc2Client(region)
 	if err != nil {
 		log.Logger.Fatalln(err)
@@ -244,11 +251,12 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
-
-	// Print instance IDs and names
-	for id, name := range instanceMap {
-		log.Logger.Tracef("Instance ID: %s, Instance Name: %s", id, name)
+	jsBytes, err := json.MarshalIndent(instanceMap, "", "  ")
+	if err != nil {
+		log.Logger.Error(err)
+		return err
 	}
+	log.Logger.Trace(string(jsBytes))
 
 	// fetch templates locally if not i don't have it
 	for id, name := range instanceMap {
@@ -265,4 +273,5 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) {
 			log.Logger.Fatalln(err)
 		}
 	}
+	return nil
 }

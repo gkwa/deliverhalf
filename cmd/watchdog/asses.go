@@ -9,6 +9,7 @@ import (
 	"time"
 
 	// Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
@@ -88,7 +89,14 @@ func asses() {
 	template, err := lt.GenLaunchTemplateFromInstanceId(region, instanceId, tmpFname)
 	if err != nil {
 		log.Logger.Error(err)
+		return
 	}
+
+	if template.LaunchTemplateData == nil {
+		log.Logger.Warnf("instance %s in region %s no longer exists, can't fetch launch template from it", instanceId, region)
+		return
+	}
+
 	blockDevices := template.LaunchTemplateData.BlockDeviceMappings
 	pp.Print(blockDevices)
 	volume.GetVolumesFromInstanceIdentityDoc(doc, &volumes)

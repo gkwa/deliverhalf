@@ -1,3 +1,5 @@
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
+
 /*
 Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 */
@@ -237,7 +239,11 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 
 	for _, file := range files {
 		if !file.IsDir() && pattern.MatchString(file.Name()) {
-			matchingFiles = append(matchingFiles, filepath.Join(dir, file.Name()))
+			x1, err := filepath.Abs(filepath.Join(dir, file.Name()))
+			if err != nil {
+				log.Logger.Error(err)
+			}
+			matchingFiles = append(matchingFiles, x1)
 		}
 	}
 
@@ -245,21 +251,30 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 	return matchingFiles, nil
 }
 
-func testCreateLaunchTemplateFromFile() (*types.LaunchTemplate, error) {
+func testCreateLaunchTemplateFromFile() error {
 	fname := "data/GetLaunchTemplateDataOutput/lt-i-0a026f9c40b0337ca.json"
-	getLaunchTemplateDataOutputFile, err := filepath.Abs(fname)
+	path, err := filepath.Abs(fname)
 	if err != nil {
 		log.Logger.Errorln(err)
-		return &types.LaunchTemplate{}, err
+		return err
 	}
 
-	template, err := CreateLaunchTemplateFromFile(getLaunchTemplateDataOutputFile)
+	cltInput, err := CreateLaunchTemplateInput(path)
 	if err != nil {
-		return &types.LaunchTemplate{}, err
+		log.Logger.Fatalln(err)
+		return err
 	}
-	log.Logger.Debugf("created launch template %s with id %s from file %s",
-		*template.LaunchTemplateName, *template.LaunchTemplateId, getLaunchTemplateDataOutputFile)
-	return template, nil
+
+	jsonData, err := json.MarshalIndent(cltInput, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling struct to JSON:", err)
+		return err
+	}
+
+	// log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
+	log.Logger.WithField("data", string(jsonData)).Trace("Log indented JSON")
+
+	return nil
 }
 
 func CreateLaunchTemplateFromFile(path string) (*types.LaunchTemplate, error) {
@@ -271,7 +286,7 @@ func CreateLaunchTemplateFromFile(path string) (*types.LaunchTemplate, error) {
 	return output.LaunchTemplate, nil
 }
 
-func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplateOutput, error) {
+func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, error) {
 	myI, err := getLaunchTemplateDataOutputFromFile(ltPath)
 	if err != nil {
 		log.Logger.Fatalf("failed to create launch template from file %s", ltPath)
@@ -317,12 +332,6 @@ func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplat
 			},
 		})
 	}
-
-	svc, err := myec2.GetEc2Client("us-west-2")
-	if err != nil {
-		log.Logger.Fatal(err)
-	}
-	ltName := genRandName("deliverhalf")
 
 	// Convert CapacityReservationSpecification from response to request type
 	capacityReservationSpec := &types.LaunchTemplateCapacityReservationSpecificationRequest{
@@ -389,18 +398,25 @@ func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplat
 	}
 
 	// Create the launch template
+	ltName := genRandName("deliverhalf")
 	cltInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: requestData,
 	}
 
-	jsonData, err := json.MarshalIndent(cltInput, "", "  ")
+	return cltInput, nil
+}
+
+func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplateOutput, error) {
+	cltInput, err := CreateLaunchTemplateInput(ltPath)
 	if err != nil {
-		fmt.Println("Error marshaling struct to JSON:", err)
-		return &ec2.CreateLaunchTemplateOutput{}, err
+		log.Logger.Fatalln(err)
 	}
 
-	log.Logger.WithField("data", string(jsonData)).Trace("Log indented JSON") // log.Logger.WithField("data", string(jsBytes)).Info("Log indented JSON")
+	svc, err := myec2.GetEc2Client("us-west-2")
+	if err != nil {
+		log.Logger.Fatal(err)
+	}
 
 	ctOutput, err := svc.CreateLaunchTemplate(context.Background(), cltInput)
 	if err != nil {
@@ -412,7 +428,7 @@ func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplat
 	if err != nil {
 		log.Logger.Warnf("failed to unmarshal template output: %s", err)
 	}
-	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
+	log.Logger.Tracef("launch template created successfully: %s", string(jsBytes))
 
 	return ctOutput, nil
 }
