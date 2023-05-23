@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
-
-	"gorm.io/gorm"
+	// Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
@@ -52,6 +50,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// subscribeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&myimds.IdentityBlob{})
 }
 
 type snsSqsConfig struct {
@@ -94,13 +93,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 	// Create an SQS client
 	sqsClient := sqs.NewFromConfig(cfg)
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	// Auto Migrate
-	db.AutoMigrate(&myimds.IdentityBlob{})
 
 	// Receive messages from the SQS queue
 	for {
@@ -119,7 +112,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 			if err != nil {
 				log.Logger.Fatalf("failed to marshal message, error: %s", err)
 			}
-			mydb.WriteToDb(db, string(jsonStr))
+			mydb.WriteToDb(mydb.Db, string(jsonStr))
 
 			deleteMessage(message, sqsClient, &config)
 		}

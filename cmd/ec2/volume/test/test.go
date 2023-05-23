@@ -7,13 +7,12 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/glebarez/sqlite" // Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
+	// Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	volume "github.com/taylormonacelli/deliverhalf/cmd/ec2/volume"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
-
-	"gorm.io/gorm"
 )
 
 // testCmd represents the test command
@@ -43,6 +42,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// testCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&volume.ExtendedEc2Volume{})
 }
 
 func test1() {
@@ -87,17 +87,11 @@ func test1() {
 			jsonStr, myvol, err)
 	}
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-
-	db.AutoMigrate(&volume.ExtendedEc2Volume{})
-	db.Create(&volume.ExtendedEc2Volume{JsonDef: jsonStr})
+	mydb.Db.Create(&volume.ExtendedEc2Volume{JsonDef: jsonStr})
 
 	var extVol volume.ExtendedEc2Volume
 	myvol2 := make(map[string]interface{})
-	db.Last(&extVol)
+	mydb.Db.Last(&extVol)
 	tf := strings.ReplaceAll(extVol.JsonDef, "\n", "")
 	tf = strings.ReplaceAll(tf, "\t", "")
 	log.Logger.Trace(tf)

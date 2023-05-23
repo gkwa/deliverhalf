@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
@@ -113,8 +112,6 @@ func getLaunchTemplateDataFromInstanceId(ctx context.Context, client *ec2.Client
 	if err != nil {
 		return nil, fmt.Errorf("failed to get LaunchTemplateData: %v", err)
 	}
-	str := spew.Sdump(resp.LaunchTemplateData)
-	log.Logger.Trace(str)
 	return resp, nil
 }
 

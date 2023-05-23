@@ -82,6 +82,7 @@ func initConfig() {
 }
 
 func SetDefaultValues() {
+	viper.SetDefault("db", "test.db")
 	viper.SetDefault("SNS", map[string]string{
 		"topic-arn": "arn:aws:sns:us-west-2:123456789012:example-topic",
 		"region":    "us-west-2",

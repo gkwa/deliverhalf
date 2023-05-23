@@ -15,8 +15,8 @@ import (
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
-// test1Cmd represents the test1 command
-var test1Cmd = &cobra.Command{
+// learn1Cmd represents the test1 command
+var learn1Cmd = &cobra.Command{
 	Use:   "learn1",
 	Short: "Learn AWS API: whats the difference between GetLaunchTemplateDataOutput and CreateLaunchTemplateInput",
 	Long: `A longer description that spans multiple lines and likely contains examples
@@ -32,7 +32,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	lt.LaunchtemplateCmd.AddCommand(test1Cmd)
+	lt.LaunchtemplateCmd.AddCommand(learn1Cmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -59,7 +59,7 @@ func compareGetLaunchTemplateDataOutputToCreateLaunchTemplateInput() {
 	ltName := string("test")
 	cltInput.LaunchTemplateName = &ltName
 
-	jsBytes, err := json.MarshalIndent(cltInput, "", " ")
+	jsBytes, err := json.MarshalIndent(cltInput, "", "  ")
 	if err != nil {
 		log.Logger.Errorln(err)
 	}

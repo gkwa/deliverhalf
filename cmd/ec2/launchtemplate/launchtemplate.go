@@ -57,6 +57,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// launchtemplateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&ExtendedGetLaunchTemplateDataOutput{})
 }
 
 func createUserData() (string, error) {
@@ -78,13 +79,8 @@ echo {{.}} >>/root/.ssh/authorized_keys
 }
 
 func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname string) (*ec2.GetLaunchTemplateDataOutput, error) {
-	db, err := mydb.OpenDB("test.db")
-	if err != nil {
-		log.Logger.Fatalf("failed to connect to database: %v", err)
-	}
-
 	var count int64
-	if err := db.Model(&ExtendedGetLaunchTemplateDataOutput{}).Count(&count).Error; err != nil {
+	if err := mydb.Db.Model(&ExtendedGetLaunchTemplateDataOutput{}).Count(&count).Error; err != nil {
 		log.Logger.Fatalln(err)
 	}
 
@@ -94,7 +90,7 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 	// get most recent template
 	var templates []ExtendedGetLaunchTemplateDataOutput
 	query := "created_at >= ? and instance_id = ?"
-	if err := db.Where(query, since, instanceID).Find(&templates).Error; err != nil {
+	if err := mydb.Db.Where(query, since, instanceID).Find(&templates).Error; err != nil {
 		log.Logger.Trace("query matchd no results")
 		return &ec2.GetLaunchTemplateDataOutput{}, err
 	}
@@ -104,7 +100,7 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		item := fmt.Sprintf("%s created %s (%s)", tpl.InstanceId, tpl.CreatedAt, humanize.Time(tpl.CreatedAt))
 		items = append(items, item)
 	}
-	log.Logger.Tracef("found %d of %d total templates matching for instance %s",
+	log.Logger.Tracef("found %d of %d total templates matching for instances [%s]",
 		count, len(templates), strings.Join(items, ", "))
 
 	// for debug I do want the json file
@@ -129,7 +125,9 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		return &ec2.GetLaunchTemplateDataOutput{}, err
 	}
 
-	if !exists {
+	if exists {
+		log.Logger.Tracef("instance with id %s exists in region %s", instanceID, region)
+	} else {
 		log.Logger.Warnf("instance with id %s no longer exists in region %s", instanceID, region)
 		return &ec2.GetLaunchTemplateDataOutput{}, err
 	}
@@ -144,7 +142,7 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		return nil, err
 	}
 
-	err = writeLaunchTemplateDataForInstanceIdToDB(resp, instanceID)
+	err = writeLaunchTemplateDataForInstanceIdToDB(resp, instanceID, region)
 	if err != nil {
 		log.Logger.Errorf("failed to write LaunchTemplateData to db: %v", err)
 	}
@@ -152,20 +150,16 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 	return resp, nil
 }
 
-func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOutput, instancdId string) error {
+func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOutput, instancdId string, region string) error {
 	jsonData, err := json.Marshal(resp)
 	if err != nil {
 		log.Logger.Errorf("failed to serialize launchtemplatedataoutput for instance %s", instancdId)
 	}
 
-	db, err := mydb.OpenDB("test.db")
-	if err != nil {
-		log.Logger.Errorf("failed to connect to database: %v", err)
-	}
-
-	db.Create(&ExtendedGetLaunchTemplateDataOutput{
+	mydb.Db.Create(&ExtendedGetLaunchTemplateDataOutput{
 		InstanceId:                instancdId,
 		LaunchTemplateDataJsonStr: string(jsonData),
+		Region:                    region,
 	})
 	return err
 }
@@ -246,6 +240,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) error {
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
+
 	// Get instance ID to name map
 	instanceMap, err := getInstanceMap(client)
 	if err != nil {
@@ -258,11 +253,10 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) error {
 	}
 	log.Logger.Trace(string(jsBytes))
 
-	// fetch templates locally if not i don't have it
+	// fetch templates locally only if i don't yet have it, this can cause drift
 	for id, name := range instanceMap {
 		ltPath := genLaunchTemplateFileAbsPath(id)
-		dir := getBasedirectoryFromPath(ltPath)
-		common.CreateDirectory(dir)
+		common.EnsureParentDirectoryExists(ltPath)
 		if common.FileExists(ltPath) {
 			log.Logger.Tracef("skipping %s because %s exists", name, ltPath)
 			continue

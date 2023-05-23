@@ -5,10 +5,12 @@ package cmd
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
+	"gorm.io/gorm"
 )
 
 // dbCmd represents the db command
@@ -36,6 +38,8 @@ to quickly create a Cobra application.`,
 	},
 }
 
+var Db *gorm.DB
+
 func init() {
 	cmd.RootCmd.AddCommand(dbCmd)
 
@@ -48,4 +52,14 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// dbCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+
+	dbFile, err := filepath.Abs("test.db")
+	if err != nil {
+		log.Logger.Fatalln(err)
+	}
+
+	Db, err = ConnectToSQLiteDatabase(dbFile)
+	if err != nil {
+		log.Logger.Fatalf("cant create or open db %s: %s", dbFile, err)
+	}
 }

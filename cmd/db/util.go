@@ -16,13 +16,6 @@ func ConnectToSQLiteDatabase(databaseFilePath string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Set up deferred closure of the database connection
-	dbSQL, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-	defer dbSQL.Close()
-
 	return db, nil
 }
 
@@ -66,13 +59,6 @@ func OpenDB1(dbFilePath string) (*gorm.DB, error) {
 	// Set connection pool settings
 	sqlDB.SetMaxIdleConns(10)
 	sqlDB.SetMaxOpenConns(100)
-
-	// Defer closing the database connection
-	defer func() {
-		if err := sqlDB.Close(); err != nil {
-			// Handle the error if needed
-		}
-	}()
 
 	return db, nil
 }

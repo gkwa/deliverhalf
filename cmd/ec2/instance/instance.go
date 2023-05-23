@@ -16,7 +16,7 @@ import (
 	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
-	db "github.com/taylormonacelli/deliverhalf/cmd/db"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -56,6 +56,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// instanceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&ExtendedInstance{})
 }
 
 func getJsonDescriptionOfAllInstancesInAllRegions() {
@@ -160,26 +161,10 @@ func readInstanceFromJsonFile(pathToJsonFile string) (types.Instance, error) {
 }
 
 func queryExtendedInstancesFromDb() {
-	conn, err := db.ConnectToSQLiteDB("test.db")
-	if err != nil {
-		log.Logger.Fatalf("failed to connect to database: %v", err)
-	}
-	defer func() {
-		sqlDB, err := conn.DB()
-		if err != nil {
-			log.Logger.Fatalf("failed to get underlying database connection: %v", err)
-		}
-		if err := sqlDB.Close(); err != nil {
-			log.Logger.Fatalf("failed to close database connection: %v", err)
-		}
-	}()
-
-	conn.AutoMigrate(&ExtendedInstance{})
-
 	var extInst ExtendedInstance
 	WriteInstancesJsonToFiles()
 	testWriteExtendedInstanceJsonDb()
-	conn.First(&extInst, 1)
+	mydb.Db.First(&extInst, 1)
 
 	var instance types.Instance
 	json.Unmarshal([]byte(extInst.JsonDef), &instance)
@@ -206,20 +191,6 @@ func testWriteExtendedInstanceJsonDb() {
 }
 
 func writeExtendedInstanceJsonDb() {
-	conn, err := db.ConnectToSQLiteDB("test.db")
-	if err != nil {
-		log.Logger.Fatalf("failed to connect to database: %v", err)
-	}
-	defer func() {
-		sqlDB, err := conn.DB()
-		if err != nil {
-			log.Logger.Fatalf("failed to get underlying database connection: %v", err)
-		}
-		if err := sqlDB.Close(); err != nil {
-			log.Logger.Fatalf("failed to close database connection: %v", err)
-		}
-	}()
-
 	inst, err := testReadInstanceFromJsonFile()
 	if err != nil {
 		panic(err)
@@ -233,8 +204,7 @@ func writeExtendedInstanceJsonDb() {
 	var instExt ExtendedInstance
 	instExt.JsonDef = string(jsonData)
 	instExt.InstanceId = *inst.InstanceId
-	conn.AutoMigrate(&ExtendedInstance{})
-	conn.Create(&instExt)
+	mydb.Db.Create(&instExt)
 }
 
 func WriteInstancesJsonToFiles() {

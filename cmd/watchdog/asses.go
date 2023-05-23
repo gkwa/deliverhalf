@@ -48,28 +48,21 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// assesCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&myimds.IdentityBlob{})
+	mydb.Db.AutoMigrate(&lt.ExtendedGetLaunchTemplateDataOutput{})
 }
 
 func asses() {
-	db, err := mydb.OpenDB("test.db")
-	if err != nil {
-		log.Logger.Fatalf("failed to connect to database: %v", err)
-	}
-
-	// Auto Migrate
-	db.AutoMigrate(&myimds.IdentityBlob{})
-	db.AutoMigrate(&lt.ExtendedGetLaunchTemplateDataOutput{})
-
 	since := time.Now().Add(-time.Hour)
 
 	var count int64
-	if err := db.Model(&myimds.IdentityBlob{}).Count(&count).Error; err != nil {
+	if err := mydb.Db.Model(&myimds.IdentityBlob{}).Count(&count).Error; err != nil {
 		log.Logger.Fatalln(err)
 	}
 
 	var identityDocs []myimds.IdentityBlob
 	query := "fetch_timestamp >= ?"
-	db.Where(query, since).Group("instance_id").Find(&identityDocs)
+	mydb.Db.Where(query, since).Group("instance_id").Find(&identityDocs)
 	log.Logger.Debugf("found %d matching of %d identity documents", len(identityDocs), count)
 
 	for _, value := range identityDocs {
