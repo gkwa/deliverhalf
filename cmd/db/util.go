@@ -1,38 +1,28 @@
 package cmd
 
 import (
+	"context"
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/sirupsen/logrus"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // Connect to a SQLite database and return a GORM database object
 func ConnectToSQLiteDatabase(databaseFilePath string) (*gorm.DB, error) {
+	// Create the custom logger that forwards GORM logs to the global logger
+	gormLogger := CustomLogger{logger: log.Logger}
+
 	// Open a connection to the database
-	db, err := gorm.Open(sqlite.Open(databaseFilePath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(databaseFilePath), &gorm.Config{
+		Logger: gormLogger,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	return db, nil
-}
-
-func ConnectToSQLiteDB(dbFilePath string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dbFilePath), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-	return db, nil
-}
-
-func OpenDB(dbFilePath string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dbFilePath), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, err
@@ -45,22 +35,41 @@ func OpenDB(dbFilePath string) (*gorm.DB, error) {
 	return db, nil
 }
 
-func OpenDB1(dbFilePath string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dbFilePath), &gorm.Config{})
-	if err != nil {
-		return nil, err
+// CustomLogger is a custom logger that forwards GORM logs to logrus for Trace level
+type CustomLogger struct {
+	logger *logrus.Logger
+}
+
+// LogMode sets the log mode for the logger
+func (l CustomLogger) LogMode(level logger.LogLevel) logger.Interface {
+	return l
+}
+
+// Info logs informational messages
+func (l CustomLogger) Info(ctx context.Context, msg string, data ...interface{}) {
+	l.logger.Tracef(msg, data...)
+}
+
+// Warn logs warning messages
+func (l CustomLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+	l.logger.Warnf(msg, data...)
+}
+
+// Error logs error messages
+func (l CustomLogger) Error(ctx context.Context, msg string, data ...interface{}) {
+	l.logger.Errorf(msg, data...)
+}
+
+// Trace logs SQL statements at the Trace level
+func (l CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	if l.logger.IsLevelEnabled(logrus.TraceLevel) {
+		sql, rows := fc()
+		l.logger.Tracef("%s[%.2fms] %s, row count %d\n",
+			err,
+			float64(time.Since(begin).Milliseconds()),
+			sql,
+			rows)
 	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, err
-	}
-
-	// Set connection pool settings
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-
-	return db, nil
 }
 
 func Maintenance() {
