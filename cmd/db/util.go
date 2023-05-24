@@ -14,7 +14,9 @@ import (
 // Connect to a SQLite database and return a GORM database object
 func ConnectToSQLiteDatabase(databaseFilePath string) (*gorm.DB, error) {
 	// Create the custom logger that forwards GORM logs to the global logger
-	gormLogger := CustomLogger{logger: log.Logger}
+	gormLogger := CustomLogger{
+		logger: log.Logger,
+	}
 
 	// Open a connection to the database
 	db, err := gorm.Open(sqlite.Open(databaseFilePath), &gorm.Config{

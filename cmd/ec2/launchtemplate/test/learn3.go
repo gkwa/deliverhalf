@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	lt "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	"gorm.io/gorm"
 )
 
@@ -25,8 +26,8 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("learn3 called")
-		testGormCheckWhetherRecordExists()
-		// testGormCheckWhetherRecordExistsShort()
+		// testGormCheckWhetherRecordExists()
+		testGormCheckWhetherRecordExistsShort()
 	},
 }
 
@@ -45,7 +46,7 @@ func init() {
 }
 
 func testGormCheckWhetherRecordExists() {
-	instanceID := "i-0d681411429a045cc1"
+	instanceID := "i-0d681411429a045cc"
 	var result lt.ExtendedGetLaunchTemplateDataOutput
 	err := mydb.Db.First(&result, lt.ExtendedGetLaunchTemplateDataOutput{InstanceId: instanceID}).Error
 
@@ -72,8 +73,8 @@ func testGormCheckWhetherRecordExistsShort() {
 	dbRresult := mydb.Db.First(&record, lt.ExtendedGetLaunchTemplateDataOutput{InstanceId: instanceID})
 
 	if errors.Is(dbRresult.Error, gorm.ErrRecordNotFound) {
-		fmt.Printf("%s not found instance\n", instanceID)
+		log.Logger.Warnf("%s not found instance\n", instanceID)
 		return
 	}
-	fmt.Printf("found instance %s\n", instanceID)
+	log.Logger.Printf("found instance %s\n", instanceID)
 }

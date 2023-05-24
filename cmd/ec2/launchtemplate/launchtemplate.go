@@ -252,7 +252,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) error {
 		log.Logger.Error(err)
 		return err
 	}
-	log.Logger.Trace(string(jsBytes))
+	log.Logger.Tracef("instance map per region: %s", string(jsBytes))
 
 	// fetch templates locally only if i don't yet have it, this can cause drift
 	for id, name := range instanceMap {
