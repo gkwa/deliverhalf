@@ -131,6 +131,7 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 		log.Logger.Warnf("instance with id %s no longer exists in region %s", instanceID, region)
 		return &ec2.GetLaunchTemplateDataOutput{}, err
 	}
+
 	resp, err := getLaunchTemplateDataFromInstanceId(context.Background(), client, instanceID)
 	if err != nil {
 		log.Logger.Errorf("failed to get LaunchTemplateData: %v", err)
@@ -164,7 +165,7 @@ func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOut
 	return err
 }
 
-func getInstanceMap(client *ec2.Client) (map[string]string, error) {
+func getInstanceMapPerRegion(client *ec2.Client) (map[string]string, error) {
 	input := &ec2.DescribeInstancesInput{}
 	result, err := client.DescribeInstances(context.Background(), input)
 	if err != nil {
@@ -242,7 +243,7 @@ func genLaunchTemplatesForAllEc2InstancesInregion(region string) error {
 	}
 
 	// Get instance ID to name map
-	instanceMap, err := getInstanceMap(client)
+	instanceMap, err := getInstanceMapPerRegion(client)
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
