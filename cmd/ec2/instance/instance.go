@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (
@@ -13,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
@@ -56,7 +55,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// instanceCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	mydb.Db.AutoMigrate(&ExtendedInstance{})
+	mydb.Db.AutoMigrate(&ExtendedInstanceDetail{})
 }
 
 func getJsonDescriptionOfAllInstancesInAllRegions() {
@@ -84,7 +83,7 @@ func getJsonDescriptionOfAllInstancesInAllRegions() {
 			}()
 
 			// write templates to data/lt-*.json
-			describeEc2InstancesInRegionToJson(*region.RegionName)
+			describeAllEc2InstancesInRegionToJson(*region.RegionName)
 		}(region)
 	}
 
@@ -92,7 +91,7 @@ func getJsonDescriptionOfAllInstancesInAllRegions() {
 	wg.Wait()
 }
 
-func describeEc2InstancesInRegionToJson(region string) {
+func describeAllEc2InstancesInRegionToJson(region string) {
 	client, err := myec2.GetEc2Client(region)
 	if err != nil {
 		log.Logger.Errorln(err)
@@ -109,26 +108,16 @@ func describeEc2InstancesInRegionToJson(region string) {
 
 	resp, err := client.DescribeInstances(context.TODO(), input)
 	if err != nil {
-		fmt.Println("Failed to describe instances:", err)
+		log.Logger.Error("Failed to describe instances:", err)
 		return
 	}
 
 	for _, reservation := range resp.Reservations {
 		for _, instance := range reservation.Instances {
-			fileName := getInstanceFileName(instance)
-			path, err := filepath.Abs(filepath.Join("data", "types.instance", fileName))
-			if err != nil {
-				log.Logger.Errorln(err)
+			if err := writeInstanceDetails(instance, region); err != nil {
+				log.Logger.Errorf("failed to write instance details: %v\n", err)
 			}
-			if common.FileExists(path) {
-				log.Logger.Warnf("skipping %s because it already exists", path)
-				continue
-			}
-			if err := writeInstanceDetailsToFile(path, instance); err != nil {
-				fmt.Printf("Failed to write instance details to file: %v\n", err)
-				continue
-			}
-			fmt.Printf("Successfully wrote instance details to file: %s\n", path)
+			log.Logger.Tracef("successfully wrote instance details for %s\n", *instance.InstanceId)
 		}
 	}
 }
@@ -161,8 +150,7 @@ func readInstanceFromJsonFile(pathToJsonFile string) (types.Instance, error) {
 }
 
 func queryExtendedInstancesFromDb() {
-	var extInst ExtendedInstance
-	WriteInstancesJsonToFiles()
+	var extInst ExtendedInstanceDetail
 	testWriteExtendedInstanceJsonDb()
 	mydb.Db.First(&extInst, 1)
 
@@ -201,74 +189,52 @@ func writeExtendedInstanceJsonDb() {
 		panic(err)
 	}
 
-	var instExt ExtendedInstance
+	var instExt ExtendedInstanceDetail
 	instExt.JsonDef = string(jsonData)
 	instExt.InstanceId = *inst.InstanceId
 	mydb.Db.Create(&instExt)
 }
 
-func WriteInstancesJsonToFiles() {
-	client, err := myec2.GetEc2Client("us-west-2")
+func writeInstanceDetails(instance types.Instance, region string) error {
+	fName := fmt.Sprintf("%s.json", *instance.InstanceId)
+	path, err := filepath.Abs(filepath.Join("data", "types.instance", fName))
 	if err != nil {
 		log.Logger.Errorln(err)
 	}
+	common.EnsureParentDirectoryExists(path)
 
-	input := &ec2.DescribeInstancesInput{
-		// Filters: []types.Filter{
-		// 	{
-		// 		Name:   aws.String("instance-state-name"),
-		// 		Values: []string{"running"},
-		// 	},
-		// },
-	}
-
-	resp, err := client.DescribeInstances(context.TODO(), input)
-	if err != nil {
-		fmt.Println("Failed to describe instances:", err)
-		return
-	}
-
-	for _, reservation := range resp.Reservations {
-		for _, instance := range reservation.Instances {
-			fileName := getInstanceFileName(instance)
-			path, err := filepath.Abs(filepath.Join("data", "types.instance", fileName))
-			if err != nil {
-				log.Logger.Errorln(err)
-			}
-			if common.FileExists(path) {
-				log.Logger.Warnf("skipping %s because it already exists", path)
-				continue
-			}
-			if err := writeInstanceDetailsToFile(path, instance); err != nil {
-				fmt.Printf("Failed to write instance details to file: %v\n", err)
-				continue
-			}
-			fmt.Printf("Successfully wrote instance details to file: %s\n", path)
-		}
-	}
-}
-
-func getInstanceFileName(instance types.Instance) string {
-	return *instance.InstanceId + ".json"
-}
-
-func writeInstanceDetailsToFile(fileName string, instance types.Instance) error {
-	common.EnsureParentDirectoryExists(fileName)
-
-	file, err := os.Create(fileName)
+	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file for instance %s: %v", *instance.InstanceId, err)
 	}
 	defer file.Close()
 
-	data, err := json.MarshalIndent(instance, "", "    ")
+	jsonBlob, err := json.MarshalIndent(instance, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal JSON for instance %s: %v", *instance.InstanceId, err)
 	}
 
-	if _, err := file.Write(data); err != nil {
+	if _, err := file.Write(jsonBlob); err != nil {
 		return fmt.Errorf("failed to write JSON data to file for instance %s: %v", *instance.InstanceId, err)
 	}
 
+	mydb.Db.Create(&ExtendedInstanceDetail{
+		InstanceId: *instance.InstanceId,
+		Region:     region,
+		JsonDef:    string(jsonBlob),
+		Name:       GetTagValue(&instance.Tags, "Name"),
+	})
+
 	return nil
+}
+
+// GetTagValue returns the value of the tag with the specified key.
+// If no tag with the given key is found, it returns an empty string.
+func GetTagValue(tags *[]types.Tag, tagKey string) string {
+	for _, tag := range *tags {
+		if aws.StringValue(tag.Key) == tagKey {
+			return aws.StringValue(tag.Value)
+		}
+	}
+	return ""
 }

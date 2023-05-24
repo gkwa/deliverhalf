@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (
@@ -70,9 +68,9 @@ func testGormCheckWhetherRecordExists() {
 func testGormCheckWhetherRecordExistsShort() {
 	instanceID := "i-0d681411429a045cc1"
 	var record lt.ExtendedGetLaunchTemplateDataOutput
-	dbRresult := mydb.Db.First(&record, lt.ExtendedGetLaunchTemplateDataOutput{InstanceId: instanceID})
+	dbResult := mydb.Db.First(&record, lt.ExtendedGetLaunchTemplateDataOutput{InstanceId: instanceID})
 
-	if errors.Is(dbRresult.Error, gorm.ErrRecordNotFound) {
+	if errors.Is(dbResult.Error, gorm.ErrRecordNotFound) {
 		log.Logger.Warnf("%s not found instance\n", instanceID)
 		return
 	}
