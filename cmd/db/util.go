@@ -74,17 +74,13 @@ func (l CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (str
 
 func Maintenance() {
 	// open a SQLite database
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
-	if err != nil {
-		log.Logger.Fatalf("can't connect to db: %s", err)
-	}
 	log.Logger.Debugf("cleaning db")
 
 	// get a list of all tables in the database
 	var tables []string
-	result := db.Raw("SELECT name FROM sqlite_master WHERE type='table'").Scan(&tables)
+	result := Db.Raw("SELECT name FROM sqlite_master WHERE type='table'").Scan(&tables)
 	if result.Error != nil {
-		log.Logger.Fatalf("error selecting from sqlite_master: %s", err)
+		log.Logger.Fatalf("error selecting from sqlite_master: %s", result.Error)
 	}
 
 	// loop over each table
@@ -93,7 +89,7 @@ func Maintenance() {
 		since := time.Now().AddDate(0, -6, 0)
 
 		// delete records older than the cutoff date
-		result := db.Table(table).Where("created_at < ?", since).Delete(nil)
+		result := Db.Table(table).Where("created_at < ?", since).Delete(nil)
 		if result.Error != nil {
 			log.Logger.Warnf("could not delete records from table: %s", table)
 		}
