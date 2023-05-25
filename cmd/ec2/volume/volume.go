@@ -19,6 +19,7 @@ import (
 	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	meta "github.com/taylormonacelli/deliverhalf/cmd/meta"
+	"gorm.io/gorm"
 )
 
 // volumeCmd represents the volume command
@@ -58,6 +59,9 @@ func init() {
 	// is called directly, e.g.:
 	// volumeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	mydb.Db.AutoMigrate(&ExtendedEc2BlockDeviceMapping{})
+
+	// Add a unique constraint on InstanceId and VolumeId fields
+	mydb.Db.AutoMigrate(&ExtendedEc2BlockDeviceMapping{}, &gorm.Model{})
 }
 
 type VolumeTag struct {

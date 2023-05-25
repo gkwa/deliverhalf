@@ -5,6 +5,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -120,6 +123,40 @@ func extractBlockDeviceMappingsFromInstanceWithName1(instanceNames *[]string) {
 		Joins(query).
 		Find(&extendedInstances)
 
+	instanceIds := make([]string, 0)
+	volumeIds := make([]string, 0)
+
+	for _, extInst := range extendedInstances {
+		var inst types.Instance
+		err := json.Unmarshal([]byte(extInst.JsonDef), &inst)
+		if err != nil {
+			log.Logger.Fatal(err)
+		}
+
+		for _, bdMap := range inst.BlockDeviceMappings {
+			volumeId := aws.StringValue(bdMap.Ebs.VolumeId)
+			instanceIds = append(instanceIds, *inst.InstanceId)
+			volumeIds = append(volumeIds, volumeId)
+		}
+	}
+
+	existingMappings := []volume.ExtendedEc2BlockDeviceMapping{}
+	mydb.Db.Where("instance_id IN (?) AND volume_id IN (?)", instanceIds, volumeIds).Find(&existingMappings)
+
+	if mydb.Db.Error != nil {
+		log.Logger.Fatalln(mydb.Db.Error)
+	}
+
+	existingMappingsMap := make(map[string]volume.ExtendedEc2BlockDeviceMapping)
+	for _, existingMapping := range existingMappings {
+		key := existingMapping.InstanceId + existingMapping.VolumeId
+		existingMappingsMap[key] = existingMapping
+	}
+
+	// Prepare the values for the bulk update
+	var updates []string
+	var values []interface{}
+
 	for _, extInst := range extendedInstances {
 		var inst types.Instance
 		err := json.Unmarshal([]byte(extInst.JsonDef), &inst)
@@ -139,16 +176,38 @@ func extractBlockDeviceMappingsFromInstanceWithName1(instanceNames *[]string) {
 				InstanceName: extInst.Name,
 				VolumeId:     volumeId,
 			}
-			filter := volume.ExtendedEc2BlockDeviceMapping{
-				InstanceId: eebdm.InstanceId,
-				VolumeId:   eebdm.VolumeId,
-			}
 
-			// Use FirstOrCreate to find or create the record
-			if err := mydb.Db.FirstOrCreate(&eebdm, filter).Error; err != nil {
-				log.Logger.Fatalln(err)
-			}
-
+			// Generate the SQL update statement and values
+			updates = append(updates, "(?, ?, ?, ?, ?, ?)")
+			values = append(values, eebdm.InstanceName, eebdm.JsonDef, eebdm.InstanceId, eebdm.VolumeId, time.Now(), time.Now())
 		}
+	}
+
+	query = `INSERT INTO extended_ec2_block_device_mappings
+	(
+		instance_name,
+		json_def,
+		instance_id,
+		volume_id,
+		created_at,
+        updated_at
+	)
+	VALUES %s
+	ON conflict
+	(
+		instance_id,
+		volume_id
+	)
+	DO UPDATE
+	SET instance_name = excluded.instance_name,
+		json_def = excluded.json_def
+	`
+
+	// Perform the bulk update
+	updateStatement := fmt.Sprintf(query, strings.Join(updates, ", "))
+	result := mydb.Db.Exec(updateStatement, values...)
+
+	if result.Error != nil {
+		log.Logger.Error(result.Error)
 	}
 }
