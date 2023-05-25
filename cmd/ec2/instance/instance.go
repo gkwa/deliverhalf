@@ -11,7 +11,6 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/k0kubun/pp"
 	"github.com/spf13/cobra"
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
@@ -222,19 +221,8 @@ func writeInstanceDetails(instance types.Instance, region string) error {
 		InstanceId: *instance.InstanceId,
 		Region:     region,
 		JsonDef:    string(jsonBlob),
-		Name:       GetTagValue(&instance.Tags, "Name"),
+		Name:       myec2.GetTagValue(&instance.Tags, "Name"),
 	})
 
 	return nil
-}
-
-// GetTagValue returns the value of the tag with the specified key.
-// If no tag with the given key is found, it returns an empty string.
-func GetTagValue(tags *[]types.Tag, tagKey string) string {
-	for _, tag := range *tags {
-		if aws.StringValue(tag.Key) == tagKey {
-			return aws.StringValue(tag.Value)
-		}
-	}
-	return ""
 }

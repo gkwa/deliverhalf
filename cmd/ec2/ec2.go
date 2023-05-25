@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	awsv1 "github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
 	"github.com/taylormonacelli/deliverhalf/cmd"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -93,4 +94,30 @@ func GetAllAwsRegions() []types.Region {
 		log.Logger.Traceln(*region.RegionName)
 	}
 	return regions
+}
+
+// GetTagValue returns the value of the tag with the specified key.
+// If no tag with the given key is found, it returns an empty string.
+func GetTagValue(tags *[]types.Tag, tagKey string) string {
+	for _, tag := range *tags {
+		if awsv1.StringValue(tag.Key) == tagKey {
+			return awsv1.StringValue(tag.Value)
+		}
+	}
+	return ""
+}
+
+func GetTagSpecificationValue(tagSpecs *[]types.LaunchTemplateTagSpecification, tagKey string) string {
+	for _, spec := range *tagSpecs {
+		if awsv1.StringValue((*string)(&spec.ResourceType)) != "instance" {
+			continue
+		}
+		for _, tag := range spec.Tags {
+			if awsv1.StringValue(tag.Key) == tagKey {
+				return awsv1.StringValue(tag.Value)
+			}
+		}
+	}
+
+	return ""
 }

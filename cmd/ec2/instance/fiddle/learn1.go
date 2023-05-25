@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
+	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	instance "github.com/taylormonacelli/deliverhalf/cmd/ec2/instance"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 	"gorm.io/gorm"
@@ -55,6 +56,6 @@ func learn1() {
 	if err != nil {
 		log.Logger.Fatal(err)
 	}
-	name := instance.GetTagValue(&inst.Tags, "Name")
+	name := myec2.GetTagValue(&inst.Tags, "Name")
 	fmt.Printf("instance name: %s\n", name)
 }

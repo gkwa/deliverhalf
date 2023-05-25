@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "data/*": true,
+      "deliverhalf.log": true
+    }
+  }
+}

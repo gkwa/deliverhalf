@@ -4,10 +4,9 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	lt "github.com/taylormonacelli/deliverhalf/cmd/ec2/launchtemplate"
+	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
 
 // learn2Cmd represents the learn2 command
@@ -21,7 +20,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("learn2 called")
+		log.Logger.Trace("learn2 called")
 	},
 }
 

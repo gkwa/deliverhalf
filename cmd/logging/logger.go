@@ -54,12 +54,6 @@ func NewLogger() (*logrus.Logger, error) {
 	return logger, nil
 }
 
-var Logger *logrus.Logger
-
-func init() {
-	Logger, _ = NewLogger()
-}
-
 func ParseLogLevel(level string) logrus.Level {
 	switch level {
 	case "trace":
@@ -93,3 +87,9 @@ func getProcessName() (string, error) {
 
 	return name, nil
 }
+
+func init() {
+	Logger, _ = NewLogger()
+}
+
+var Logger *logrus.Logger

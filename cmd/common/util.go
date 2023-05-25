@@ -146,6 +146,8 @@ func CreateDirectory(dirName string) {
 }
 
 func EnsureParentDirectoryExists(path string) error {
+	absPath, _ := filepath.Abs(path)
+	log.Logger.Tracef("creating directory %s", absPath)
 	dir := filepath.Dir(path)
 	err := os.MkdirAll(dir, 0o755)
 	if err != nil {

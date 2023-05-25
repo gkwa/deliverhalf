@@ -26,7 +26,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("test1 called")
+		log.Logger.Trace("test1 called")
 		compareGetLaunchTemplateDataOutputToCreateLaunchTemplateInput()
 	},
 }
@@ -46,7 +46,10 @@ func init() {
 }
 
 func compareGetLaunchTemplateDataOutputToCreateLaunchTemplateInput() {
-	f1, err := filepath.Abs("data/GetLaunchTemplateDataOutput/lt-i-0c31627ed7b52abcb.json")
+	f1Name := "data/GetLaunchTemplateDataOutput/lt-i-0c31627ed7b52abcb.json"
+	f2Name := "data/CreateLaunchTemplateInput/ct-i-0c31627ed7b52abcb.json"
+
+	f1, err := filepath.Abs(f1Name)
 	if err != nil {
 		log.Logger.Error(err)
 	}
@@ -65,7 +68,7 @@ func compareGetLaunchTemplateDataOutputToCreateLaunchTemplateInput() {
 	}
 	log.Logger.Debug(string(jsBytes))
 
-	f2, err := filepath.Abs("data/CreateLaunchTemplateInput/ct-i-0c31627ed7b52abcb.json")
+	f2, err := filepath.Abs(f2Name)
 	if err != nil {
 		log.Logger.Error(err)
 	}

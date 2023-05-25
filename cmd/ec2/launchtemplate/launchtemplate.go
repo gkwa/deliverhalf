@@ -157,7 +157,11 @@ func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOut
 		log.Logger.Errorf("failed to serialize launchtemplatedataoutput for instance %s", instancdId)
 	}
 
+	// fetch instance name from launch template created from instance
+	instanceName := myec2.GetTagSpecificationValue(&resp.LaunchTemplateData.TagSpecifications, "Name")
+
 	mydb.Db.Create(&ExtendedGetLaunchTemplateDataOutput{
+		InstanceName:              instanceName,
 		InstanceId:                instancdId,
 		LaunchTemplateDataJsonStr: string(jsonData),
 		Region:                    region,

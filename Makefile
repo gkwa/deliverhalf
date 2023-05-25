@@ -25,6 +25,7 @@ $(APP): $(TARGET)
 	cp $< $@
 
 $(TARGET): $(SOURCES)
+	rm -rf /Users/mtm/pdev/taylormonacelli/deliverhalf/GetLaunchTemplateDataOutput
 	gofumpt -w $(SOURCES)
 	goreleaser build --single-target --snapshot --clean
 	go vet ./...

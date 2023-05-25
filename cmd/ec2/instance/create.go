@@ -27,7 +27,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("create called")
-		testCreateEc2InstanceFromLaunchTemplate()
+		testCreateEc2InstanceFromLaunchTemplateFromFile()
 	},
 }
 
@@ -45,9 +45,27 @@ func init() {
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func testCreateEc2InstanceFromLaunchTemplate() {
+func testCreateEc2InstanceFromLaunchTemplateFromFile() {
 	region := "us-west-2"
 	launchTemplateDataFile := "data/GetLaunchTemplateDataOutput/lt-i-0c47cd895db8040c7.json"
+	template, err := lt.CreateLaunchTemplateFromFile(launchTemplateDataFile)
+	if err != nil {
+		log.Logger.Errorln(err)
+	}
+	templateID := *template.LaunchTemplateId
+	latestVersion := "1"
+
+	createEc2InstanceFromLaunchTemplate(region, templateID, launchTemplateDataFile, latestVersion)
+}
+
+func testCreateEc2InstanceFromLaunchTemplateFromDbFromLtName() {
+	ltName := "mytest"
+	createEc2InstanceFromLaunchTemplateFromDbFromLtName(ltName)
+}
+
+func createEc2InstanceFromLaunchTemplateFromDbFromLtName(ltName string) {
+	launchTemplateDataFile := "data/GetLaunchTemplateDataOutput/lt-i-0c47cd895db8040c7.json"
+	region := "us-west-2"
 	template, err := lt.CreateLaunchTemplateFromFile(launchTemplateDataFile)
 	if err != nil {
 		log.Logger.Errorln(err)
