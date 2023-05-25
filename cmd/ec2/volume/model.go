@@ -11,8 +11,8 @@ type ExtendedEc2Volume struct {
 
 type ExtendedEc2BlockDeviceMapping struct {
 	gorm.Model
-	VolumeId     string
-	InstanceId   string
+	InstanceId   string `gorm:"primaryKey"`
+	VolumeId     string `gorm:"primaryKey"`
 	InstanceName string
 	JsonDef      string
 }
