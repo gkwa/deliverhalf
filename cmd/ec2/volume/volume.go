@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	imds "github.com/taylormonacelli/deliverhalf/cmd/ec2/imds"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -56,6 +57,7 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// volumeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	mydb.Db.AutoMigrate(&ExtendedEc2BlockDeviceMapping{})
 }
 
 type VolumeTag struct {
