@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/spf13/cobra"
+	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
 )
@@ -73,7 +74,7 @@ func genSnapTags() []types.Tag {
 }
 
 func createVolumeSnapshot() (string, error) {
-	volumeID := "vol-0dd3bbb75ac0b5b8e"
+	volumeID := "vol-0ffb2624db085b8d1"
 	region := "us-west-2"
 
 	snapshotID, err := snapAndTagVolume(volumeID, region)
@@ -81,6 +82,12 @@ func createVolumeSnapshot() (string, error) {
 		log.Logger.Error(err)
 		return "", err
 	}
+
+	mydb.Db.Create(&ExtendedEc2VolumeSnapshot{
+		Region:     region,
+		VolumeId:   volumeID,
+		SnapshotId: snapshotID,
+	})
 
 	return snapshotID, err
 }
@@ -90,19 +97,18 @@ func snapAndTagVolume(volumeID string, region string) (string, error) {
 	description := genSnapDesc()
 
 	tagsStr := joinTagsToStr(tags)
-	log.Logger.Printf("Creating snapshot with description '%s' for "+
-		"volumeID: %s in region: %s and tagging with: '%s'",
+	log.Logger.Tracef("creating snapshot with description: %s for volumeID: %s in region: %s and tagging with: '%s'",
 		description, volumeID, region, tagsStr)
 
 	snapshotID, err := snapVolume(volumeID, region, description)
 	if err != nil {
-		log.Logger.Printf("Error snapshotting volume: %s", err)
+		log.Logger.Errorf("Error snapshotting volume: %s", err)
 		return "", err
 	}
 
-	log.Logger.Printf("Snapshot created with ID: %s", snapshotID)
+	log.Logger.Tracef("snapshot created with ID: %s", snapshotID)
 	err = tagSnapshot(snapshotID, region, tags)
-	return "", err
+	return snapshotID, err
 }
 
 func snapVolume(volumeID string, region string, snapshotDesc string) (string, error) {
@@ -131,11 +137,10 @@ func snapVolume(volumeID string, region string, snapshotDesc string) (string, er
 }
 
 func queryRegionForSnapshotsWithTag(region string) {
-	cfg, err := myec2.CreateConfig(region)
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
 		log.Logger.Fatalf("can't create ec2 config in region %s: %s", region, err)
 	}
-	ec2svc := ec2.NewFromConfig(cfg)
 
 	// Get all snapshots with tag key "CreatedBy" and value "deliverhalf"
 	input1 := &ec2.DescribeSnapshotsInput{
@@ -146,7 +151,7 @@ func queryRegionForSnapshotsWithTag(region string) {
 			},
 		},
 	}
-	output, err := ec2svc.DescribeSnapshots(context.Background(), input1)
+	output, err := svc.DescribeSnapshots(context.Background(), input1)
 	if err != nil {
 		log.Logger.Traceln("Error listing snapshots:", err)
 	}
@@ -165,18 +170,17 @@ func tagSnapshot(snapshotID string, region string, tags []types.Tag) error {
 		Tags:      tags,
 	}
 
-	cfg, err := myec2.CreateConfig(region)
+	svc, err := myec2.GetEc2Client(region)
 	if err != nil {
-		log.Logger.Fatalf("Could not create config %s", err)
+		log.Logger.Fatalf("can't create ec2 config in region %s: %s", region, err)
 	}
-	ec2svc := ec2.NewFromConfig(cfg)
 
-	_, err = ec2svc.CreateTags(context.Background(), tagInput)
+	_, err = svc.CreateTags(context.Background(), tagInput)
 	if err != nil {
 		log.Logger.Fatalf("Failed to tag snapshot with ID %s: %v", snapshotID, err)
 	} else {
 		tagsStr := joinTagsToStr(tags)
-		log.Logger.Printf("Successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
+		log.Logger.Tracef("successfully tagged snapshot %s with tags %s", snapshotID, tagsStr)
 	}
 	return err
 }

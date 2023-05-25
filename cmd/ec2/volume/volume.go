@@ -62,6 +62,7 @@ func init() {
 
 	// Add a unique constraint on InstanceId and VolumeId fields
 	mydb.Db.AutoMigrate(&ExtendedEc2BlockDeviceMapping{}, &gorm.Model{})
+	mydb.Db.AutoMigrate(&ExtendedEc2VolumeSnapshot{}, &gorm.Model{})
 }
 
 type VolumeTag struct {

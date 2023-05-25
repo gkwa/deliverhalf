@@ -108,7 +108,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 
 		for _, message := range receiveOutput.Messages {
 			log.Logger.Tracef("Received message body: %s", *message.Body)
-			jsonStr, err := json.Marshal(message)
+			jsonStr, err := json.MarshalIndent(message, "", "  ")
 			if err != nil {
 				log.Logger.Fatalf("failed to marshal message, error: %s", err)
 			}
@@ -120,7 +120,7 @@ func GetIdentityDocFromSNS(region string) (imds.InstanceIdentityDocument, error)
 }
 
 func base64EncodeMessage(message types.Message) (string, error) {
-	jsonStr, err := json.Marshal(message)
+	jsonStr, err := json.MarshalIndent(message, "", "  ")
 	if err != nil {
 		log.Logger.Fatalf("Error serializing message: %s", err)
 	}

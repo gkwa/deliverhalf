@@ -76,7 +76,7 @@ func mergeData(data []byte) map[string]interface{} {
 
 func mapToJsonStr(data map[string]interface{}) string {
 	// Convert the map to a flat JSON string
-	jsonStr, err := json.Marshal(data)
+	jsonStr, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Logger.Println("Error parsing JSON data:", err)
 	}

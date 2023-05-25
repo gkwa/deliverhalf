@@ -152,7 +152,7 @@ func GenLaunchTemplateFromInstanceId(region string, instanceID string, ltFname s
 }
 
 func writeLaunchTemplateDataForInstanceIdToDB(resp *ec2.GetLaunchTemplateDataOutput, instancdId string, region string) error {
-	jsonData, err := json.Marshal(resp)
+	jsonData, err := json.MarshalIndent(resp, "", "  ")
 	if err != nil {
 		log.Logger.Errorf("failed to serialize launchtemplatedataoutput for instance %s", instancdId)
 	}

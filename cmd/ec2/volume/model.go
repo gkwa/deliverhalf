@@ -17,3 +17,11 @@ type ExtendedEc2BlockDeviceMapping struct {
 	InstanceName string
 	JsonDef      string
 }
+
+type ExtendedEc2VolumeSnapshot struct {
+	gorm.Model
+
+	VolumeId   string
+	SnapshotId string
+	Region     string
+}

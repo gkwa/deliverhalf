@@ -57,7 +57,7 @@ func writeBase64DataWrapper(data interface{}) error {
 	deleteFile(dataPath)
 
 	// encode the map to a JSON-encoded byte array
-	b, err := json.Marshal(data)
+	b, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
 		log.Logger.Println("Error encoding map to JSON:", err)
 	}

@@ -4,6 +4,8 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	instance "github.com/taylormonacelli/deliverhalf/cmd/ec2/instance"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
@@ -21,6 +23,15 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("fiddle called")
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(0)
+		}
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.Help()
+		os.Exit(1)
+		return nil
 	},
 }
 

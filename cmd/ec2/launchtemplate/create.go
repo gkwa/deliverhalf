@@ -485,7 +485,7 @@ func testCreate4() {
 		return
 	}
 
-	jsBytes, err := json.Marshal(createTemplateOutput)
+	jsBytes, err := json.MarshalIndent(createTemplateOutput, "", "  ")
 	if err != nil {
 		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
 	}
