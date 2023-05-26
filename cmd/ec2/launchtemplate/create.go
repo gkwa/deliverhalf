@@ -41,11 +41,8 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("create called")
 		// create()
-		// createLaunchTemplateFromFile()
-		// getLaunchDataFromAllTemplatesInDirectory()
-		// getLaunchDataFromAllTemplates()
-		// testCreate1()
-		testCreateLaunchTemplateFromFile()
+		// testCreateLaunchTemplateFromFile()
+		testCreateLaunchTemplateOutputFromFile()
 		// testCreate4()
 	},
 }
@@ -270,7 +267,7 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 }
 
 func testCreateLaunchTemplateFromFile() error {
-	fname := "data/GetLaunchTemplateDataOutput/lt-i-0a026f9c40b0337ca.json"
+	fname := "data/GetLaunchTemplateDataOutput/lt-i-07e53ad5c1747dd52.json"
 	path, err := filepath.Abs(fname)
 	if err != nil {
 		log.Logger.Errorln(err)
@@ -534,4 +531,29 @@ func testCreate4() {
 		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
 	}
 	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
+}
+
+func testCreateLaunchTemplateOutputFromFile() error {
+	fname := "data/GetLaunchTemplateDataOutput/lt-i-07e53ad5c1747dd52.json"
+	path, err := filepath.Abs(fname)
+	if err != nil {
+		log.Logger.Errorln(err)
+		return err
+	}
+
+	cltOutput, err := CreateLaunchTemplateOutputFromFile(path)
+	if err != nil {
+		log.Logger.Fatalln(err)
+		return err
+	}
+
+	jsonData, err := json.MarshalIndent(cltOutput, "", "  ")
+	if err != nil {
+		fmt.Println("error marshaling struct to JSON:", err)
+		return err
+	}
+
+	log.Logger.WithField("data", string(jsonData)).Trace("log indented JSON")
+
+	return nil
 }
