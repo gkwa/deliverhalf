@@ -349,16 +349,16 @@ func CreateLaunchTemplateInputFromString(ltOutput string) (*ec2.CreateLaunchTemp
 	// Convert NetworkInterfaces to LaunchTemplateInstanceNetworkInterfaceSpecificationRequest
 	niSpecs := make([]types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest, len(myI.LaunchTemplateData.NetworkInterfaces))
 	for i, ni := range myI.LaunchTemplateData.NetworkInterfaces {
-		n := len(myI.LaunchTemplateData.NetworkInterfaces[i].Ipv6Addresses)
+		// n := len(myI.LaunchTemplateData.NetworkInterfaces[i].Ipv6Addresses)
 		niSpecs[i] = types.LaunchTemplateInstanceNetworkInterfaceSpecificationRequest{
-			AssociatePublicIpAddress:       ni.AssociatePublicIpAddress,
-			DeleteOnTermination:            ni.DeleteOnTermination,
-			Description:                    ni.Description,
-			DeviceIndex:                    ni.DeviceIndex,
-			Groups:                         ni.Groups,
-			InterfaceType:                  ni.InterfaceType,
-			Ipv6AddressCount:               ni.Ipv6AddressCount,
-			Ipv6Addresses:                  make([]types.InstanceIpv6AddressRequest, n),
+			AssociatePublicIpAddress: ni.AssociatePublicIpAddress,
+			DeleteOnTermination:      ni.DeleteOnTermination,
+			Description:              ni.Description,
+			DeviceIndex:              ni.DeviceIndex,
+			Groups:                   ni.Groups,
+			InterfaceType:            ni.InterfaceType,
+			// Ipv6AddressCount:               ni.Ipv6AddressCount,
+			// Ipv6Addresses:                  make([]types.InstanceIpv6AddressRequest, n),
 			NetworkCardIndex:               ni.DeviceIndex,
 			NetworkInterfaceId:             ni.NetworkInterfaceId,
 			PrivateIpAddress:               ni.PrivateIpAddress,
