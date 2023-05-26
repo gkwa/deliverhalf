@@ -36,7 +36,7 @@ func NewLogger() (*logrus.Logger, error) {
 		FullTimestamp:   true,
 	})
 
-	// Add this line forlog.filename and line number!
+	// Add this line for logging filename and line number!
 	logger.SetReportCaller(true)
 
 	logger.SetFormatter(&logrus.TextFormatter{
