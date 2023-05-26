@@ -47,10 +47,6 @@ func NewLogger() (*logrus.Logger, error) {
 
 	logger.SetReportCaller(true)
 
-	logger.SetFormatter(&logrus.TextFormatter{
-		DisableQuote: true,
-	})
-
 	return logger, nil
 }
 
