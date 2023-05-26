@@ -1,6 +1,4 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
+//lint:file-ignore U1000 Return to this when i've pulled my head out of my ass
 package cmd
 
 import (

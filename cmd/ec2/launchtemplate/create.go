@@ -6,6 +6,7 @@ Copyright © 2023 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -209,6 +210,18 @@ func getLaunchDataFromAllTemplatesInDirectory() ([]ec2.GetLaunchTemplateDataOutp
 	return launchTemplates, nil
 }
 
+func getLaunchTemplateDataOutputFromString(ltString string) (*ec2.GetLaunchTemplateDataOutput, error) {
+	// Unmarshal the JSON into a ResponseLaunchTemplateData struct
+	var ltData *ec2.GetLaunchTemplateDataOutput
+	err := json.Unmarshal([]byte(ltString), &ltData)
+	if err != nil {
+		log.Logger.Warnln("couldn't unmarshal launchtemplate from string")
+		return &ec2.GetLaunchTemplateDataOutput{}, err
+	}
+
+	return ltData, nil
+}
+
 func getLaunchTemplateDataOutputFromFile(path string) (*ec2.GetLaunchTemplateDataOutput, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
@@ -264,7 +277,7 @@ func testCreateLaunchTemplateFromFile() error {
 		return err
 	}
 
-	cltInput, err := CreateLaunchTemplateInput(path)
+	cltInput, err := CreateLaunchTemplateInputFromFile(path)
 	if err != nil {
 		log.Logger.Fatalln(err)
 		return err
@@ -290,10 +303,41 @@ func CreateLaunchTemplateFromFile(path string) (*types.LaunchTemplate, error) {
 	return output.LaunchTemplate, nil
 }
 
-func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, error) {
-	myI, err := getLaunchTemplateDataOutputFromFile(ltPath)
+func readFileToString(filename string) (string, error) {
+	file, err := os.Open(filename)
 	if err != nil {
-		log.Logger.Fatalf("failed to create launch template from file %s", ltPath)
+		return "", err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	content := ""
+	for scanner.Scan() {
+		content += scanner.Text() + "\n"
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return content, nil
+}
+
+func CreateLaunchTemplateInputFromFile(ltPath string) (*ec2.CreateLaunchTemplateInput, error) {
+	content, err := readFileToString(ltPath)
+	if err != nil {
+		log.Logger.Fatalf("can't read file %s", ltPath)
+	}
+	cltInput, err := CreateLaunchTemplateInputFromString(content)
+	if err != nil {
+		log.Logger.Fatalln("can't create launch template input", err)
+	}
+	return cltInput, nil
+}
+
+func CreateLaunchTemplateInputFromString(ltOutput string) (*ec2.CreateLaunchTemplateInput, error) {
+	myI, err := getLaunchTemplateDataOutputFromString(ltOutput)
+	if err != nil {
+		log.Logger.Fatalf("failed to create launch template from string")
 	}
 
 	// Convert TagSpecifications to LaunchTemplateTagSpecificationRequest
@@ -428,7 +472,7 @@ func CreateLaunchTemplateInput(ltPath string) (*ec2.CreateLaunchTemplateInput, e
 }
 
 func CreateLaunchTemplateOutputFromFile(ltPath string) (*ec2.CreateLaunchTemplateOutput, error) {
-	cltInput, err := CreateLaunchTemplateInput(ltPath)
+	cltInput, err := CreateLaunchTemplateInputFromFile(ltPath)
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}

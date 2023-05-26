@@ -54,7 +54,7 @@ func compareGetLaunchTemplateDataOutputToCreateLaunchTemplateInput() {
 		log.Logger.Error(err)
 	}
 
-	cltInput, err := lt.CreateLaunchTemplateInput(f1)
+	cltInput, err := lt.CreateLaunchTemplateInputFromFile(f1)
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}

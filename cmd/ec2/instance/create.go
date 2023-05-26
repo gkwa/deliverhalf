@@ -58,12 +58,7 @@ func testCreateEc2InstanceFromLaunchTemplateFromFile() {
 	createEc2InstanceFromLaunchTemplate(region, templateID, launchTemplateDataFile, latestVersion)
 }
 
-func testCreateEc2InstanceFromLaunchTemplateFromDbFromLtName() {
-	ltName := "mytest"
-	createEc2InstanceFromLaunchTemplateFromDbFromLtName(ltName)
-}
-
-func createEc2InstanceFromLaunchTemplateFromDbFromLtName(ltName string) {
+func CreateEc2InstanceFromLaunchTemplateFromDbFromLtName(ltName string) {
 	launchTemplateDataFile := "data/GetLaunchTemplateDataOutput/lt-i-0c47cd895db8040c7.json"
 	region := "us-west-2"
 	template, err := lt.CreateLaunchTemplateFromFile(launchTemplateDataFile)
