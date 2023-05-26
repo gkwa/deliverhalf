@@ -74,7 +74,7 @@ func getConfig() (map[string]interface{}, error) {
 	return viper.AllSettings(), nil
 }
 
-func genRandName(prefix string) string {
+func GenRandName(prefix string) string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
 	randomNumber := rng.Intn(1000000)
@@ -105,7 +105,7 @@ func create() {
 	}
 
 	region := lt["region"].(string)
-	ltName := genRandName("deliverhalf")
+	ltName := GenRandName("deliverhalf")
 
 	client, err := myec2.GetEc2Client(region)
 	if err != nil {
@@ -270,7 +270,7 @@ func getPathsToMarshalledLaunchTemplates(dir string) ([]string, error) {
 }
 
 func testCreateLaunchTemplateFromFile() error {
-	fname := "data/GetLaunchTemplateDataOutput/lt-i-0a026f9c40b0337ca.json"
+	fname := "data/GetLaunchTemplateDataOutput/lt-i-07e53ad5c1747dd52.json"
 	path, err := filepath.Abs(fname)
 	if err != nil {
 		log.Logger.Errorln(err)
@@ -462,7 +462,7 @@ func CreateLaunchTemplateInputFromString(ltOutput string) (*ec2.CreateLaunchTemp
 	}
 
 	// Create the launch template
-	ltName := genRandName("deliverhalf")
+	ltName := GenRandName("deliverhalf")
 	cltInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: requestData,
@@ -505,7 +505,6 @@ func testCreate4() {
 	}
 
 	path := "data/i-0476d67631ffc9996-LaunchTemplate.json"
-	path = "/Users/mtm/pdev/taylormonacelli/deliverhalf/data/i-0476d67631ffc9996-LaunchTemplate.json"
 	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
