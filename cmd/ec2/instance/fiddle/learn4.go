@@ -48,31 +48,39 @@ func init() {
 
 func testCreateEc2InstanceFromLaunchTemplateFromDbFromLtName() (*ec2.CreateLaunchTemplateOutput, error) {
 	ltName := "sendstream"
-	var x1 lt.ExtendedGetLaunchTemplateDataOutput
+	var tplDataOutput lt.ExtendedGetLaunchTemplateDataOutput
 
-	dbResult := mydb.Db.First(&x1, lt.ExtendedGetLaunchTemplateDataOutput{InstanceName: ltName})
+	dbResult := mydb.Db.First(
+		&tplDataOutput,
+		lt.ExtendedGetLaunchTemplateDataOutput{
+			InstanceName: ltName,
+		},
+	)
 	if errors.Is(dbResult.Error, gorm.ErrRecordNotFound) {
-		log.Logger.Warn("no record found")
+		log.Logger.Fatalf("no record found for %s\n", ltName)
 		return &ec2.CreateLaunchTemplateOutput{}, nil
 	}
 
-	cltInput, err := lt.CreateLaunchTemplateInputFromString(x1.LaunchTemplateDataJsonStr)
+	cltInput, err := lt.CreateLaunchTemplateInputFromString(
+		tplDataOutput.LaunchTemplateDataJsonStr,
+	)
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
 
+	// templates require unique names
 	ltName2 := lt.AddTimestamp(ltName)
 	cltInput.LaunchTemplateName = &ltName2
-	svc, err := myec2.GetEc2Client(x1.Region)
+	svc, err := myec2.GetEc2Client(tplDataOutput.Region)
 	if err != nil {
 		log.Logger.Fatal(err)
 	}
 
-	jsBytes, err := json.MarshalIndent(cltInput, "", "  ")
+	cltInputJsonBytes, err := json.MarshalIndent(cltInput, "", "  ")
 	if err != nil {
 		log.Logger.Warnf("failed to unmarshal template output: %s", err)
 	}
-	log.Logger.Tracef("launch template %s", string(jsBytes))
+	log.Logger.Tracef("launch template %s", string(cltInputJsonBytes))
 
 	cltOutput, err := svc.CreateLaunchTemplate(context.Background(), cltInput)
 	if err != nil {
@@ -80,11 +88,11 @@ func testCreateEc2InstanceFromLaunchTemplateFromDbFromLtName() (*ec2.CreateLaunc
 		return &ec2.CreateLaunchTemplateOutput{}, err
 	}
 
-	jsBytes, err = json.MarshalIndent(cltOutput, "", "  ")
+	cltOutputJsonBytes, err := json.MarshalIndent(cltOutput, "", "  ")
 	if err != nil {
-		log.Logger.Warnf("failed to unmarshal template output: %s", err)
+		log.Logger.Warnf("failed to unmarshal template output for template %s: %s", ltName2, err)
 	}
-	log.Logger.Tracef("launch template created successfully: %s", string(jsBytes))
+	log.Logger.Tracef("launch template %s created successfully: %s", ltName2, string(cltOutputJsonBytes))
 
 	return cltOutput, nil
 }
