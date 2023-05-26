@@ -41,8 +41,11 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Logger.Trace("create called")
 		// create()
-		// testCreateLaunchTemplateFromFile()
-		testCreateLaunchTemplateOutputFromFile()
+		// createLaunchTemplateFromFile()
+		// getLaunchDataFromAllTemplatesInDirectory()
+		// getLaunchDataFromAllTemplates()
+		// testCreate1()
+		testCreateLaunchTemplateFromFile()
 		// testCreate4()
 	},
 }
@@ -71,11 +74,18 @@ func getConfig() (map[string]interface{}, error) {
 	return viper.AllSettings(), nil
 }
 
-func genRandName(prefix string) string {
+func GenRandName(prefix string) string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)
 	randomNumber := rng.Intn(1000000)
 	ltName := fmt.Sprintf("%s-%06d", prefix, randomNumber)
+	return ltName
+}
+
+func AddTimestamp(prefix string) string {
+	currentTime := time.Now()
+	timestamp := currentTime.Format("060102150405")
+	ltName := fmt.Sprintf("%s-%s", prefix, timestamp)
 	return ltName
 }
 
@@ -102,7 +112,7 @@ func create() {
 	}
 
 	region := lt["region"].(string)
-	ltName := genRandName("deliverhalf")
+	ltName := GenRandName("deliverhalf")
 
 	client, err := myec2.GetEc2Client(region)
 	if err != nil {
@@ -274,13 +284,13 @@ func testCreateLaunchTemplateFromFile() error {
 		return err
 	}
 
-	cltInput, err := CreateLaunchTemplateInputFromFile(path)
+	cltOutput, err := CreateLaunchTemplateOutputFromFile(path)
 	if err != nil {
 		log.Logger.Fatalln(err)
 		return err
 	}
 
-	jsonData, err := json.MarshalIndent(cltInput, "", "  ")
+	jsonData, err := json.MarshalIndent(cltOutput, "", "  ")
 	if err != nil {
 		fmt.Println("error marshaling struct to JSON:", err)
 		return err
@@ -458,7 +468,7 @@ func CreateLaunchTemplateInputFromString(ltOutput string) (*ec2.CreateLaunchTemp
 	}
 
 	// Create the launch template
-	ltName := genRandName("deliverhalf")
+	ltName := GenRandName("deliverhalf")
 	cltInput := &ec2.CreateLaunchTemplateInput{
 		LaunchTemplateName: &ltName,
 		LaunchTemplateData: requestData,
@@ -501,7 +511,6 @@ func testCreate4() {
 	}
 
 	path := "data/i-0476d67631ffc9996-LaunchTemplate.json"
-	path = "/Users/mtm/pdev/taylormonacelli/deliverhalf/data/i-0476d67631ffc9996-LaunchTemplate.json"
 	fileContents, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
@@ -530,29 +539,4 @@ func testCreate4() {
 		log.Logger.Warnf("failed to unmarshal tempalte output: %s", err)
 	}
 	log.Logger.Tracef("Launch template created successfully: %s", string(jsBytes))
-}
-
-func testCreateLaunchTemplateOutputFromFile() error {
-	fname := "data/GetLaunchTemplateDataOutput/lt-i-07e53ad5c1747dd52.json"
-	path, err := filepath.Abs(fname)
-	if err != nil {
-		log.Logger.Errorln(err)
-		return err
-	}
-
-	cltOutput, err := CreateLaunchTemplateOutputFromFile(path)
-	if err != nil {
-		log.Logger.Fatalln(err)
-		return err
-	}
-
-	jsonData, err := json.MarshalIndent(cltOutput, "", "  ")
-	if err != nil {
-		fmt.Println("error marshaling struct to JSON:", err)
-		return err
-	}
-
-	log.Logger.WithField("data", string(jsonData)).Trace("log indented JSON")
-
-	return nil
 }
