@@ -1,19 +1,22 @@
+/*
+Copyright © 2023 NAME HERE <EMAIL ADDRESS>
+*/
 package cmd
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/taylormonacelli/deliverhalf/cmd"
-	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
-	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
+	// Pure go SQLite driver, checkout https://github.com/glebarez/sqlite for details
 
 	"github.com/spf13/cobra"
+
+	mysns "github.com/taylormonacelli/deliverhalf/cmd/sns"
 )
 
-// SnsCmd represents the sns command
-var SnsCmd = &cobra.Command{
-	Use:   "sns",
-	Args:  cobra.OnlyValidArgs,
+// testingCmd represents the testing command
+var testingCmd = &cobra.Command{
+	Use:   "testing",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -22,8 +25,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Logger.Traceln("sns called")
-
+		fmt.Println("testing called")
 		if len(args) == 0 {
 			cmd.Help()
 			os.Exit(0)
@@ -37,16 +39,15 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	cmd.RootCmd.AddCommand(SnsCmd)
+	mysns.SnsCmd.AddCommand(testingCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// snsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// testingCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// snsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	mydb.Db.AutoMigrate(&ExtendedSqsReceiveMessageOutput{})
+	// testingCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

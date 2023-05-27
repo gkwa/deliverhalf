@@ -17,6 +17,7 @@ import (
 	_ "github.com/taylormonacelli/deliverhalf/cmd/logs"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/meta"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/sns"
+	_ "github.com/taylormonacelli/deliverhalf/cmd/sns/test"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/update"
 	_ "github.com/taylormonacelli/deliverhalf/cmd/watchdog"
 )
