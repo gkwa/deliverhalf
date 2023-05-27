@@ -78,7 +78,7 @@ func testCreateEc2InstanceFromLaunchTemplateFromDbFromLtName() (*ec2.CreateLaunc
 
 	cltInputJsonBytes, err := json.MarshalIndent(cltInput, "", "  ")
 	if err != nil {
-		log.Logger.Warnf("failed to unmarshal template output: %s", err)
+		log.Logger.WithField("error", err).Warnf("failed to unmarshal template output: %s", err)
 	}
 	log.Logger.Tracef("launch template %s", string(cltInputJsonBytes))
 

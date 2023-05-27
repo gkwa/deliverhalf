@@ -87,14 +87,14 @@ func WriteToDb(db *gorm.DB, str string) {
 
 	subMessageBytes, err := base64.StdEncoding.DecodeString(body["Message"].(string))
 	if err != nil {
-		log.Logger.Fatal("Failed to decode base64 string")
+		log.Logger.Error("Failed to decode base64 string")
 	}
 	subMessage := string(subMessageBytes)
 
 	var doc imds.ExtendedInstanceIdentityDocument
 	err = json.Unmarshal([]byte(subMessage), &doc)
 	if err != nil {
-		log.Logger.Fatal(err)
+		log.Logger.Error(err)
 	}
 
 	result := db.Create(&imds.IdentityBlob{

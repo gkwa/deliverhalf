@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -30,21 +29,9 @@ func NewLogger() (*logrus.Logger, error) {
 
 	logger := logrus.New()
 	logger.SetOutput(io.MultiWriter(os.Stdout, logFile))
-	logger.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: time.RFC3339,
-		DisableColors:   true,
-		FullTimestamp:   true,
-	})
+	logger.SetFormatter(&logrus.JSONFormatter{})
 
 	// Add this line for logging filename and line number!
-	logger.SetReportCaller(true)
-
-	logger.SetFormatter(&logrus.TextFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-		DisableColors:   true,
-		FullTimestamp:   true,
-	})
-
 	logger.SetReportCaller(true)
 
 	return logger, nil

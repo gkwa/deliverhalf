@@ -66,7 +66,7 @@ func (l CustomLogger) Error(ctx context.Context, msg string, data ...interface{}
 func (l CustomLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if l.logger.IsLevelEnabled(logrus.TraceLevel) {
 		sql, rows := fc()
-		l.logger.Tracef("%s[%.2fms] %s, row count %d\n",
+		l.logger.Tracef("%v[%.2fms] %s, row count %d\n",
 			err,
 			float64(time.Since(begin).Milliseconds()),
 			sql,
