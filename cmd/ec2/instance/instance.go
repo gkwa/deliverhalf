@@ -17,6 +17,7 @@ import (
 	mydb "github.com/taylormonacelli/deliverhalf/cmd/db"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
+	"github.com/taylormonacelli/lemondrop"
 )
 
 // InstanceCmd represents the instance command
@@ -59,7 +60,10 @@ func init() {
 
 func getJsonDescriptionOfAllInstancesInAllRegions() {
 	// Get a list of all AWS regions
-	regions := myec2.GetAllAwsRegions()
+	regions, err := lemondrop.GetAllAwsRegions()
+	if err != nil {
+		log.Logger.Fatalln("can't fetch aws region list")
+	}
 
 	// Create a buffered channel to limit the number of simultaneous goroutines
 	ch := make(chan types.Region, 3)

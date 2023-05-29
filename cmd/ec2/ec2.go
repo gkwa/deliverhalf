@@ -70,32 +70,6 @@ func GetEc2Client(region string) (*ec2.Client, error) {
 	return ec2.NewFromConfig(config), nil
 }
 
-func GetAllAwsRegions() []types.Region {
-	// Load the AWS SDK configuration
-	client, err := GetEc2Client("us-west-2")
-	if err != nil {
-		log.Logger.Traceln("failed to load AWS SDK config:", err)
-		return []types.Region{}
-	}
-
-	// Get a list of all AWS regions
-	resp, err := client.DescribeRegions(context.Background(), nil)
-	if err != nil {
-		log.Logger.Traceln("failed to describe AWS regions:", err)
-		return []types.Region{}
-	}
-
-	// Create an empty slice of types.Region
-	regions := make([]types.Region, 0, len(resp.Regions))
-	regions = append(regions, resp.Regions...)
-
-	// Print the region names
-	for _, region := range regions {
-		log.Logger.Traceln(*region.RegionName)
-	}
-	return regions
-}
-
 // GetTagValue returns the value of the tag with the specified key.
 // If no tag with the given key is found, it returns an empty string.
 func GetTagValue(tags *[]types.Tag, tagKey string) string {

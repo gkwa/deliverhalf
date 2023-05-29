@@ -15,6 +15,7 @@ import (
 	common "github.com/taylormonacelli/deliverhalf/cmd/common"
 	myec2 "github.com/taylormonacelli/deliverhalf/cmd/ec2"
 	log "github.com/taylormonacelli/deliverhalf/cmd/logging"
+	"github.com/taylormonacelli/lemondrop"
 )
 
 // fetchallCmd represents the fetchall command
@@ -158,7 +159,10 @@ func getInstanceNameOrExit(ctx context.Context, client *ec2.Client, instanceID s
 
 func getAllEc2InstanceLaunchTemplates() {
 	// Get a list of all AWS regions
-	regions := myec2.GetAllAwsRegions()
+	regions, err := lemondrop.GetAllAwsRegions()
+	if err != nil {
+		log.Logger.Fatalln("can't fetch aws region list")
+	}
 
 	// Create a buffered channel to limit the number of simultaneous goroutines
 	ch := make(chan types.Region, 6)
