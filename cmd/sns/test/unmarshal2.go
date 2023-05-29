@@ -21,7 +21,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("unmarshal called")
-		testUnmarshalinMessageBody()
+		testUnmarshalingMessageBody()
 	},
 }
 
@@ -29,7 +29,7 @@ func init() {
 	testingCmd.AddCommand(unmarshal2Cmd)
 }
 
-func testUnmarshalinMessageBody() {
+func testUnmarshalingMessageBody() {
 	message := `{"version":"0","id":"0bc35f4a-94d2-4578-b6de-35f6e4af493c","detail-type":"EC2 Instance State-change Notification","source":"aws.ec2","account":"238904731545","time":"2023-05-27T15:30:21Z","region":"us-west-2","resources":["arn:aws:ec2:us-west-2:238904731545:instance/i-067e0a3f3a5b0d6be"],"detail":{"instance-id":"i-067e0a3f3a5b0d6be","state":"running"}}`
 	var event myec2.EC2StateChangeEvent
 	err := json.Unmarshal([]byte(message), &event)
