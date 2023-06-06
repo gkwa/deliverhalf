@@ -75,8 +75,12 @@ func testUnmarshalingSqsReceiveMessageOutput() {
 		fmt.Println("Error deserializing message:", err)
 		return
 	}
+
 	for _, message := range rmo.Messages {
-		jsonBytes, _ := json.MarshalIndent(message.Attributes, "", "  ")
+
+		jsonBytes, _ := json.MarshalIndent(message, "", "  ")
+		fmt.Println(string(jsonBytes))
+		jsonBytes, _ = json.MarshalIndent(message.Attributes, "", "  ")
 		fmt.Println("Attributes:", string(jsonBytes))
 		fmt.Println("Body:", *message.Body)
 
@@ -87,28 +91,28 @@ func testUnmarshalingSqsReceiveMessageOutput() {
 			return
 		}
 
-		jsonBytes, _ = json.MarshalIndent(notification, "", "  ")
-		fmt.Println("Notification:", string(jsonBytes))
+		// jsonBytes, _ = json.MarshalIndent(notification, "", "  ")
+		// fmt.Println("Notification:", string(jsonBytes))
 
-		var data map[string]json.RawMessage
-		err = json.Unmarshal([]byte(notification.Message), &data)
-		if err != nil {
-			fmt.Println("Error unmarshaling JSON:", err)
-			return
-		}
-		jsonBytes, _ = json.MarshalIndent(data, "", "  ")
-		fmt.Println("Message:", string(jsonBytes))
+		// var data map[string]json.RawMessage
+		// err = json.Unmarshal([]byte(notification.Message), &data)
+		// if err != nil {
+		// 	fmt.Println("Error unmarshaling JSON:", err)
+		// 	return
+		// }
+		// jsonBytes, _ = json.MarshalIndent(data, "", "  ")
+		// fmt.Println("Message:", string(jsonBytes))
 
-		fmt.Println("MD5OfBody:", *message.MD5OfBody)
+		// fmt.Println("MD5OfBody:", *message.MD5OfBody)
 
-		if message.MD5OfMessageAttributes != nil {
-			fmt.Println("MD5OfMessageAttributes:", *message.MD5OfMessageAttributes)
-		}
+		// if message.MD5OfMessageAttributes != nil {
+		// 	fmt.Println("MD5OfMessageAttributes:", *message.MD5OfMessageAttributes)
+		// }
 
-		jsonBytes, _ = json.MarshalIndent(message.MessageAttributes, "", "  ")
-		fmt.Println("MessageAttributes:", string(jsonBytes))
+		// jsonBytes, _ = json.MarshalIndent(message.MessageAttributes, "", "  ")
+		// fmt.Println("MessageAttributes:", string(jsonBytes))
 
-		fmt.Println("MessageId:", *message.MessageId)
-		fmt.Println("ReceiptHandle:", *message.ReceiptHandle)
+		// fmt.Println("MessageId:", *message.MessageId)
+		// fmt.Println("ReceiptHandle:", *message.ReceiptHandle)
 	}
 }

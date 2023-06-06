@@ -74,7 +74,7 @@ func genSnapTags() []types.Tag {
 }
 
 func createVolumeSnapshot() (string, error) {
-	volumeID := "vol-0ffb2624db085b8d1"
+	volumeID := "vol-0e2e8b13f5b6a37e9"
 	region := "us-west-2"
 
 	snapshotID, err := snapAndTagVolume(volumeID, region)

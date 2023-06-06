@@ -63,25 +63,55 @@ func init() {
 
 func test() {
 	amiName := fmt.Sprintf("my-image-%08d", time.Now().Unix())
-	ami := AMI{
+	amiMeta := AMI{
 		Name:       amiName,
-		SnapshotID: "snap-0b4a8799b77332142",
+		SnapshotID: "snap-01094c684c68ff680",
 		Region:     "us-west-2",
 	}
-	err := createAMIFromSnapshot(&ami)
+
+	rio, err := createAMIFromSnapshot(&amiMeta)
 	if err != nil {
 		log.Logger.Error(err)
 		panic(err)
 	}
 
-	log.Logger.Printf("Created AMI with properties %s", ami)
+	tagAmi(rio, &amiMeta)
+	log.Logger.Printf("Created AMI with properties %s", amiMeta)
 }
 
-func createAMIFromSnapshot(ami *AMI) error {
-	svc, err := myec2.GetEc2Client(ami.Region)
+func tagAmi(ec2RegisterImageOutput *ec2.RegisterImageOutput, amiMeta *AMI) error {
+	svc, err := myec2.GetEc2Client(amiMeta.Region)
 	if err != nil {
 		log.Logger.Error(err)
 		return err
+	}
+
+	// Create tags for the registered image
+	tagName := "Name"
+
+	tagInput := &ec2.CreateTagsInput{
+		Resources: []string{*ec2RegisterImageOutput.ImageId},
+		Tags: []types.Tag{
+			{
+				Key:   &tagName,
+				Value: &amiMeta.Name,
+			},
+		},
+	}
+
+	_, err = svc.CreateTags(context.Background(), tagInput)
+	if err != nil {
+		log.Logger.Fatalf("Error creating tags for image %s: %v", *ec2RegisterImageOutput.ImageId, err)
+		return err
+	}
+	return nil
+}
+
+func createAMIFromSnapshot(ami *AMI) (*ec2.RegisterImageOutput, error) {
+	svc, err := myec2.GetEc2Client(ami.Region)
+	if err != nil {
+		log.Logger.Error(err)
+		return &ec2.RegisterImageOutput{}, err
 	}
 
 	// Call the RegisterImage function to register the AMI image
@@ -93,7 +123,7 @@ func createAMIFromSnapshot(ami *AMI) error {
 				DeviceName: aws.String("/dev/sda1"),
 				Ebs: &types.EbsBlockDevice{
 					SnapshotId:          aws.String(ami.SnapshotID),
-					VolumeSize:          aws.Int32(10),
+					VolumeSize:          aws.Int32(30),
 					DeleteOnTermination: aws.Bool(true),
 				},
 			},
@@ -108,5 +138,5 @@ func createAMIFromSnapshot(ami *AMI) error {
 	}
 	ami.ImageID = *result.ImageId
 
-	return err
+	return result, err
 }
