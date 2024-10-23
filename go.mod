@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.16.0
 	github.com/taylormonacelli/lemondrop v0.0.20
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gorm.io/gorm v1.25.1
+	gorm.io/gorm v1.25.12
 )
 
 require (
@@ -66,7 +66,7 @@ require (
 	github.com/taylormonacelli/forestfish v0.0.10 // indirect
 	github.com/taylormonacelli/somespider v0.0.0-20240127160314-1cf65a8b592b // indirect
 	golang.org/x/sys v0.21.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.22.6 // indirect
