@@ -14,7 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sns v1.33.2
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.36.2
 	github.com/dustin/go-humanize v1.0.1
-	github.com/glebarez/sqlite v1.8.0
+	github.com/glebarez/sqlite v1.11.0
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/shopspring/decimal v1.3.1
 	github.com/sirupsen/logrus v1.9.3
@@ -43,7 +43,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.2 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/glebarez/go-sqlite v1.21.1 // indirect
+	github.com/glebarez/go-sqlite v1.21.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -72,5 +72,5 @@ require (
 	modernc.org/libc v1.22.6 // indirect
 	modernc.org/mathutil v1.5.0 // indirect
 	modernc.org/memory v1.6.0 // indirect
-	modernc.org/sqlite v1.23.0 // indirect
+	modernc.org/sqlite v1.23.1 // indirect
 )
