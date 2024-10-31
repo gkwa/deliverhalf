@@ -9,10 +9,10 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.32.3
 	github.com/aws/aws-sdk-go-v2/config v1.28.1
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.18
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.186.1
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.187.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.2
 	github.com/aws/aws-sdk-go-v2/service/sns v1.33.3
-	github.com/aws/aws-sdk-go-v2/service/sqs v1.36.2
+	github.com/aws/aws-sdk-go-v2/service/sqs v1.36.3
 	github.com/dustin/go-humanize v1.0.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/k0kubun/pp v3.0.1+incompatible
