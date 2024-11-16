@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.28.4
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.19
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.188.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.189.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.67.0
 	github.com/aws/aws-sdk-go-v2/service/sns v1.33.4
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.37.0
