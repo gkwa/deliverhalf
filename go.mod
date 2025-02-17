@@ -18,7 +18,7 @@ require (
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/shopspring/decimal v1.4.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.0
+	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.19.0
 	github.com/taylormonacelli/lemondrop v0.0.20
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
