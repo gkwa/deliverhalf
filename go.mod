@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.20.1
 	github.com/taylormonacelli/lemondrop v0.0.20
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gorm.io/gorm v1.26.1
+	gorm.io/gorm v1.30.0
 )
 
 require (
