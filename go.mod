@@ -2,7 +2,7 @@ module github.com/taylormonacelli/deliverhalf
 
 go 1.23.0
 
-toolchain go1.26.0
+toolchain go1.26.1
 
 require (
 	github.com/aws/aws-sdk-go v1.55.8
