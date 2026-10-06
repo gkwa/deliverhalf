@@ -16,7 +16,7 @@ require (
 	github.com/dustin/go-humanize v1.1.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/k0kubun/pp v3.0.1+incompatible
-	github.com/shopspring/decimal v1.4.0
+	github.com/shopspring/decimal v1.5.0
 	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
